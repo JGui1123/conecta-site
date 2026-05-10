@@ -26,6 +26,10 @@
         .empty-state h3 { font-family: var(--cn-font-display); margin-bottom: .5rem; } .empty-state p { color: var(--cn-mute); margin-bottom: 1.5rem; }
         .btn { display: inline-flex; align-items: center; gap: 5px; padding: .55rem 1.2rem; border-radius: 8px; font-weight: 600; cursor: pointer; border: none; font-family: var(--cn-font-body); font-size: .85rem; text-decoration: none; }
         .btn-primary { background: var(--cn-primary); color: #fff; } .btn-primary:hover { background: var(--cn-primary-d); }
+        .btn-ghost { background: var(--cn-paper); color: var(--cn-mute); border: 1px solid var(--cn-line); }
+        .qa-card { background: var(--cn-paper); border: 1px solid var(--cn-line); border-radius: var(--cn-radius); padding: 1.25rem; text-align: center; cursor: pointer; transition: .2s; display: block; text-decoration: none; color: inherit; }
+        .qa-card:hover { box-shadow: 0 4px 16px rgba(10,22,40,.06); transform: translateY(-2px); }
+        .form-control { width: 100%; padding: .6rem; border: 1px solid var(--cn-line); border-radius: 8px; margin-bottom: .5rem; font-family: inherit; }
         @media (max-width: 768px) { .layout { grid-template-columns: 1fr; } .sidebar { height: auto; position: relative; } }
     </style>
 </head>
@@ -38,7 +42,10 @@
             <button class="nav-item" onclick="showTab('vagas', this)">💼 Minhas Vagas</button>
             <button class="nav-item" onclick="showTab('produtos', this)">📦 Meus Produtos</button>
             <button class="nav-item" onclick="showTab('candidaturas', this)">📋 Candidaturas</button>
-            <a href="publicar-vaga.html" class="nav-item">➕ Publicar Vaga</a>
+            <!-- NOVO LINK PARA CAPACITAÇÃO -->
+            <a href="capacitacao.html" class="nav-item">🎓 Capacitação</a>
+            <!-- LINK PARA PUBLICAR VAGA (será ocultado para Pessoa Física) -->
+            <a href="publicar-vaga.html" class="nav-item" id="linkPublicarVaga">➕ Publicar Vaga</a>
             <a href="index.html" class="nav-item">🏠 Voltar ao site</a>
             <a href="login.html" class="nav-item" style="color:#fca5a5">🚪 Sair</a>
         </nav>
@@ -47,6 +54,34 @@
         <div class="tab active" id="tab-dashboard">
             <h1 class="page-title">Dashboard</h1>
             <div class="stats-grid" id="statsUser"></div>
+            <div style="margin-top:2rem; display:grid; grid-template-columns: repeat(auto-fill, minmax(180px,1fr)); gap:1rem;">
+                <a href="publicar-vaga.html" class="qa-card" id="cardPublicarVaga" style="text-decoration:none; color:inherit;">
+                    <div style="font-size:2rem;">➕</div>
+                    <div style="font-weight:600;">Publicar Vaga</div>
+                </a>
+                <div class="qa-card" onclick="mostrarFormCurso()">
+                    <div style="font-size:2rem;">🎓</div>
+                    <div style="font-weight:600;">Publicar Curso</div>
+                </div>
+            </div>
+            <div id="formCursoWrap" style="display:none; background:var(--cn-paper); border:1px solid var(--cn-line); border-radius:var(--cn-radius); padding:1.5rem; margin-top:1.5rem;">
+                <h3 style="font-family:var(--cn-font-display);">Novo Curso</h3>
+                <form onsubmit="salvarCursoUsuario(event)" style="display:flex; flex-direction:column; gap:1rem;">
+                    <input type="text" id="curNomeUsuario" placeholder="Nome do curso" required class="form-control">
+                    <input type="text" id="curCategoriaUsuario" placeholder="Categoria (ex: Marketing)" required class="form-control">
+                    <input type="text" id="curDuracaoUsuario" placeholder="Duração (ex: 8h)" class="form-control">
+                    <select id="curNivelUsuario" class="form-control">
+                        <option value="Iniciante">Iniciante</option>
+                        <option value="Intermediário">Intermediário</option>
+                        <option value="Avançado">Avançado</option>
+                    </select>
+                    <input type="number" id="curPrecoUsuario" placeholder="Preço (R$) - 0 para gratuito" class="form-control" step="0.01" value="0">
+                    <textarea id="curDescUsuario" placeholder="Descrição" class="form-control" rows="3"></textarea>
+                    <label><input type="checkbox" id="curGratisUsuario"> Curso gratuito</label>
+                    <button type="submit" class="btn btn-primary">Publicar Curso</button>
+                    <button type="button" class="btn btn-ghost" onclick="document.getElementById('formCursoWrap').style.display='none'">Cancelar</button>
+                </form>
+            </div>
         </div>
         <div class="tab" id="tab-vagas"><h1 class="page-title">Minhas Vagas</h1><div id="userVagas"></div></div>
         <div class="tab" id="tab-produtos"><h1 class="page-title">Meus Produtos</h1><div id="userProdutos"></div></div>
@@ -59,11 +94,20 @@
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6Y3ljYm1ubnBoeXdkenZ5bXlyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNjczOTksImV4cCI6MjA5Mzk0MzM5OX0.f4jtslTFMnn0OhwiEhU7A_O6spowX6h4GEbHQ22hIEM';
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     let user = null;
+    let perfilUsuario = null; // armazenará o tipo de perfil
 
     async function init() {
         const { data: { session } } = await db.auth.getSession();
         if (!session) { window.location.href = 'login.html'; return; }
         user = session.user;
+        // Obtém o tipo de perfil para controle de acesso
+        const { data: perfil } = await db.from('perfis').select('tipo_perfil').eq('id', user.id).single();
+        perfilUsuario = perfil?.tipo_perfil || 'pessoa_fisica';
+        // Oculta links de publicação de vaga para Pessoa Física
+        if (perfilUsuario === 'pessoa_fisica') {
+            document.getElementById('linkPublicarVaga').style.display = 'none';
+            document.getElementById('cardPublicarVaga').style.display = 'none';
+        }
         carregarDashboard();
         carregarVagas();
         carregarProdutos();
@@ -119,6 +163,41 @@
             return;
         }
         el.innerHTML = data.map(c => `<div style="background:var(--cn-paper);border:1px solid var(--cn-line);border-radius:var(--cn-radius);padding:1rem;margin-bottom:1rem"><strong>${c.nome_candidato}</strong> para ${c.vaga_titulo || 'Vaga'}<br><small>Status: ${c.status}</small></div>`).join('');
+    }
+
+    function mostrarFormCurso() {
+        document.getElementById('formCursoWrap').style.display = 'block';
+        document.getElementById('formCursoWrap').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    async function salvarCursoUsuario(e) {
+        e.preventDefault();
+        const nome = document.getElementById('curNomeUsuario').value;
+        const categoria = document.getElementById('curCategoriaUsuario').value;
+        const duracao = document.getElementById('curDuracaoUsuario').value || null;
+        const nivel = document.getElementById('curNivelUsuario').value;
+        const preco = parseFloat(document.getElementById('curPrecoUsuario').value) || 0;
+        const descricao = document.getElementById('curDescUsuario').value;
+        const gratis = document.getElementById('curGratisUsuario').checked;
+
+        const { error } = await db.from('cursos').insert([{
+            nome,
+            categoria,
+            duracao,
+            nivel,
+            preco,
+            descricao,
+            gratis,
+            ativo: true,
+            imagens: []
+        }]);
+
+        if (error) {
+            alert('Erro ao publicar curso: ' + error.message);
+            return;
+        }
+        alert('Curso publicado com sucesso!');
+        document.getElementById('formCursoWrap').style.display = 'none';
     }
 </script>
 </body>
