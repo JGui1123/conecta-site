@@ -27,9 +27,7 @@
         .modal-overlay.show { display: flex; }
         .modal-box { background: var(--cn-paper); border-radius: 16px; max-width: 500px; width: 100%; padding: 2rem; box-shadow: 0 20px 60px rgba(10,22,40,.3); text-align: center; }
         .modal-box h3 { font-family: var(--cn-font-display); margin-bottom: 1rem; }
-        .modal-box p { margin-bottom: .8rem; }
         .pix-chave { background: #f1f5f9; padding: .6rem; border-radius: 8px; font-weight: 600; user-select: all; }
-        .modal-actions { display: flex; gap: .5rem; margin-top: 1.5rem; justify-content: center; }
         @media (max-width: 900px) { .nav-links { display: none; } }
     </style>
 </head>
@@ -47,10 +45,9 @@
     <div class="modal-box" onclick="event.stopPropagation()">
         <h3 id="modalTitulo">Pagamento via PIX</h3>
         <p>Valor: <strong id="pixValor"></strong></p>
-        <p>Chave PIX:</p>
         <div class="pix-chave">guilermo_monteiro@gmail.com</div>
-        <p style="font-size:.8rem; color:var(--cn-mute);">Após o pagamento, clique em "Já paguei" para notificar o administrador.</p>
-        <div class="modal-actions">
+        <p style="font-size:.8rem; color:var(--cn-mute); margin-top:1rem;">Após o pagamento, clique em "Já paguei" para notificar o administrador.</p>
+        <div style="display:flex; gap:.5rem; margin-top:1.5rem; justify-content:center;">
             <button class="btn-matricula" id="btnNotificar">Já paguei – Notificar via WhatsApp</button>
             <button class="btn-matricula" style="background: var(--cn-mute);" onclick="fecharModalPix()">Cancelar</button>
         </div>
@@ -62,21 +59,8 @@
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6Y3ljYm1ubnBoeXdkenZ5bXlyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNjczOTksImV4cCI6MjA5Mzk0MzM5OX0.f4jtslTFMnn0OhwiEhU7A_O6spowX6h4GEbHQ22hIEM';
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     let cursosData = [];
-    let usuarioLogado = null; // guardará id e nome do comprador
-
-    // ═══ VERIFICA SESSÃO E OBTÉM DADOS DO COMPRADOR ═══
-    async function obterUsuario() {
-        const { data: { session } } = await db.auth.getSession();
-        if (session) {
-            const { data: perfil } = await db.from('perfis').select('id, nome').eq('id', session.user.id).single();
-            if (perfil) {
-                usuarioLogado = { id: perfil.id, nome: perfil.nome };
-            }
-        }
-    }
 
     async function carregar() {
-        await obterUsuario();
         const { data } = await db.from('cursos').select('*').eq('ativo', true).order('criado_em', { ascending: false });
         cursosData = data || [];
         renderizar();
@@ -105,46 +89,40 @@
         }).join('');
     }
 
-    // ═══ AÇÃO DE MATRÍCULA ═══
-    function matricular(cursoId) {
+    async function matricular(cursoId) {
+        const { data: { session } } = await db.auth.getSession();
+        if (!session) {
+            alert('Faça login para se inscrever.');
+            window.location.href = 'login.html';
+            return;
+        }
         const curso = cursosData.find(c => c.id === cursoId);
         if (!curso) return;
 
         if (curso.gratis) {
-            // Para cursos gratuitos, redireciona para o painel (futuramente pode ser uma página do curso)
-            alert('Curso gratuito liberado! Acesse seu painel para começar.');
-            window.location.href = 'painel.html';
-            return;
+            await db.from('matriculas').insert({ user_id: session.user.id, curso_id: cursoId, status: 'ativo' });
+            window.location.href = `curso-aula.html?id=${cursoId}`;
+        } else {
+            document.getElementById('pixValor').textContent = `R$ ${curso.preco.toFixed(2)}`;
+            document.getElementById('modalTitulo').textContent = `Curso: ${curso.nome}`;
+            document.getElementById('btnNotificar').onclick = async () => {
+                const { data: perfil } = await db.from('perfis').select('nome').eq('id', session.user.id).single();
+                const nomeComprador = perfil?.nome || 'Usuário';
+                const mensagem = `Curso: ${curso.nome} (ID: ${curso.id}) - R$ ${curso.preco.toFixed(2)}\nComprador: ${nomeComprador} (ID: ${session.user.id})`;
+                window.open(`https://wa.me/351962890061?text=${encodeURIComponent(mensagem)}`, '_blank');
+                await db.from('matriculas').insert({ user_id: session.user.id, curso_id: cursoId, status: 'ativo' });
+                fecharModalPix();
+                window.location.href = `curso-aula.html?id=${cursoId}`;
+            };
+            document.getElementById('modalPix').classList.add('show');
         }
-
-        // Curso pago → exibe modal PIX
-        if (!usuarioLogado) {
-            alert('Faça login para se inscrever em cursos pagos.');
-            window.location.href = 'login.html';
-            return;
-        }
-
-        document.getElementById('pixValor').textContent = `R$ ${curso.preco.toFixed(2)}`;
-        document.getElementById('modalTitulo').textContent = `Curso: ${curso.nome}`;
-
-        document.getElementById('btnNotificar').onclick = () => {
-            const mensagem = `Comprei o curso "${curso.nome}" (ID: ${curso.id}) por R$ ${curso.preco.toFixed(2)}.\nMeu ID de comprador: ${usuarioLogado.id}\nNome: ${usuarioLogado.nome}`;
-            const url = `https://wa.me/351962890061?text=${encodeURIComponent(mensagem)}`;
-            window.open(url, '_blank');
-            fecharModalPix();
-        };
-
-        document.getElementById('modalPix').classList.add('show');
     }
 
-    // ═══ MODAL PIX ═══
     function fecharModalPix(e) {
         if (e && e.target !== document.getElementById('modalPix')) return;
         document.getElementById('modalPix').classList.remove('show');
     }
-    document.addEventListener('keydown', e => {
-        if (e.key === 'Escape') fecharModalPix();
-    });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharModalPix(); });
 </script>
 </body>
 </html>
