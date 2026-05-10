@@ -120,7 +120,6 @@
         document.getElementById('tab-' + tab).classList.add('active');
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
         if (el) el.classList.add('active');
-        // Recarregar dados da aba, se necessário
         const loaders = { vagas: carregarVagas, produtos: carregarProdutos, candidaturas: carregarCandidaturas, cursos: carregarCursos };
         if (loaders[tab]) loaders[tab]();
     }
@@ -204,7 +203,15 @@
         const imagens = imagensRaw ? imagensRaw.split(',').map(u => u.trim()).filter(u => u).slice(0, 3) : [];
 
         const { error } = await db.from('cursos').insert([{
-            nome, categoria, duracao, nivel, preco, descricao, gratis, ativo: true, imagens
+            nome,
+            categoria,
+            duracao,
+            nivel,
+            preco,
+            descricao,
+            gratis,
+            ativo: true,
+            imagens
         }]);
 
         if (error) {
