@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aula — coNecta</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --cn-ink:#0A1628; --cn-primary:#1E5CFF; --cn-primary-d:#1748CC; --cn-bone:#F7F5F0; --cn-paper:#FFFFFF; --cn-line:#E6E2D9; --cn-mute:#6B7280; --cn-font-display:'Sora',sans-serif; --cn-font-body:'Inter',sans-serif; --cn-radius:12px; }
+        body { font-family:var(--cn-font-body); background:var(--cn-bone); color:var(--cn-ink); margin:0; padding:2rem; max-width:960px; margin:0 auto; }
+        .btn-back { display:inline-flex; align-items:center; gap:6px; color:var(--cn-primary); text-decoration:none; font-weight:600; margin-bottom:1.5rem; }
+        h1 { font-family:var(--cn-font-display); font-size:2rem; margin-bottom:0.5rem; }
+        .meta { color:var(--cn-mute); margin-bottom:1.5rem; }
+        .content-card { background:var(--cn-paper); border:1px solid var(--cn-line); border-radius:var(--cn-radius); padding:1.5rem; margin-bottom:1.5rem; }
+        iframe, video, audio { width:100%; border-radius:8px; max-width:100%; }
+        .pdf-link { display:inline-flex; align-items:center; gap:6px; margin-top:1rem; background:var(--cn-primary); color:#fff; padding:.6rem 1.2rem; border-radius:8px; text-decoration:none; font-weight:600; }
+        .pdf-link:hover { background:var(--cn-primary-d); }
+        .galeria { display:grid; grid-template-columns:repeat(auto-fill, minmax(200px,1fr)); gap:1rem; margin-top:1rem; }
+        .galeria img { width:100%; border-radius:8px; cursor:pointer; }
+        .error { text-align:center; padding:3rem; color:var(--cn-mute); }
+    </style>
+</head>
+<body>
+    <a href="painel.html" class="btn-back">← Voltar ao painel</a>
+    <div id="conteudoAula"></div>
+
+    <script>
+        const SUPABASE_URL = 'https://pzcycbmnnphywdzvymyr.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6Y3ljYm1ubnBoeXdkenZ5bXlyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNjczOTksImV4cCI6MjA5Mzk0MzM5OX0.f4jtslTFMnn0OhwiEhU7A_O6spowX6h4GEbHQ22hIEM';
+        const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        async function carregarAula() {
+            const params = new URLSearchParams(window.location.search);
+            const cursoId = params.get('id');
+            if (!cursoId) return erro('Curso não especificado.');
+
+            // Verificar autenticação
+            const { data: { session } } = await db.auth.getSession();
+            if (!session) return erro('Faça login para acessar o curso.');
+
+            // Verificar matrícula ou curso gratuito
+            const { data: curso } = await db.from('cursos').select('*').eq('id', cursoId).single();
+            if (!curso) return erro('Curso não encontrado.');
+
+            if (curso.gratis) {
+                // Cursos gratuitos: cria matrícula automaticamente se não existir
+                const { data: matricula } = await db.from('matriculas').select('id').eq('user_id', session.user.id).eq('curso_id', cursoId).single();
+                if (!matricula) {
+                    await db.from('matriculas').insert({ user_id: session.user.id, curso_id: cursoId, status: 'ativo' });
+                }
+            } else {
+                // Cursos pagos: verificar se tem matrícula ativa
+                const { data: matricula } = await db.from('matriculas').select('id').eq('user_id', session.user.id).eq('curso_id', cursoId).eq('status', 'ativo').single();
+                if (!matricula) return erro('Você não está matriculado neste curso. Compre‑o primeiro.');
+            }
+
+            // Renderizar página
+            document.getElementById('conteudoAula').innerHTML = `
+                <h1>${curso.nome}</h1>
+                <div class="meta">${curso.categoria} · ${curso.duracao || 'Duração variável'} · ${curso.nivel || 'Todos os níveis'}</div>
+                ${curso.video_url ? `<div class="content-card"><h3>🎬 Vídeo</h3>${curso.video_url}</div>` : ''}
+                ${curso.audio_url ? `<div class="content-card"><h3>🎧 Áudio</h3><audio controls src="${curso.audio_url}"></audio></div>` : ''}
+                ${curso.pagina_conteudo || curso.descricao ? `<div class="content-card"><h3>📖 Conteúdo</h3>${curso.pagina_conteudo || curso.descricao}</div>` : ''}
+                ${curso.pdf_url ? `<div class="content-card"><h3>📄 Material PDF</h3><a href="${curso.pdf_url}" target="_blank" class="pdf-link">Baixar PDF →</a></div>` : ''}
+                ${curso.imagens && curso.imagens.length ? `<div class="content-card"><h3>🖼️ Galeria</h3><div class="galeria">${curso.imagens.map(img => `<img src="${img}" alt="Imagem do curso">`).join('')}</div></div>` : ''}
+            `;
+        }
+
+        function erro(msg) {
+            document.getElementById('conteudoAula').innerHTML = `<div class="error"><p>${msg}</p></div>`;
+        }
+
+        carregarAula();
+    </script>
+</body>
+</html>
