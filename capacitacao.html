@@ -100,6 +100,7 @@
         if (!curso) return;
 
         if (curso.gratis) {
+            // Insere matrícula e redireciona para a aula
             await db.from('matriculas').insert({ user_id: session.user.id, curso_id: cursoId, status: 'ativo' });
             window.location.href = `curso-aula.html?id=${cursoId}`;
         } else {
