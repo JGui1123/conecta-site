@@ -23,7 +23,6 @@
         .curso-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--cn-line); padding-top: 1rem; } .curso-preco { font-family: var(--cn-font-display); font-size: 1.1rem; font-weight: 700; }
         .btn-matricula { background: var(--cn-primary); color: #fff; border: none; border-radius: 8px; padding: .5rem 1.1rem; font-size: .82rem; font-weight: 600; cursor: pointer; font-family: var(--cn-font-body); transition: all .2s; }
         .btn-matricula:hover { background: var(--cn-primary-d); }
-        /* modal */
         .modal-overlay { position: fixed; inset: 0; background: rgba(10,22,40,.65); z-index: 500; display: none; align-items: center; justify-content: center; padding: 1.5rem; backdrop-filter: blur(4px); }
         .modal-overlay.show { display: flex; }
         .modal-box { background: var(--cn-paper); border-radius: 16px; max-width: 500px; width: 100%; padding: 2rem; box-shadow: 0 20px 60px rgba(10,22,40,.3); text-align: center; }
@@ -41,7 +40,6 @@
 <div class="hero"><h1>Capacitação Profissional</h1><p>Cursos para você se destacar no mercado</p></div>
 <div class="page-wrap"><div class="cursos-grid" id="cursosGrid"></div></div>
 
-<!-- Modal para pagamento PIX -->
 <div class="modal-overlay" id="modalPix" onclick="fecharModalPix(event)">
     <div class="modal-box" onclick="event.stopPropagation()">
         <h3 id="pixTitulo">Pagamento via PIX</h3>
@@ -57,7 +55,6 @@
     const SUPABASE_URL = 'https://pzcycbmnnphywdzvymyr.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6Y3ljYm1ubnBoeXdkenZ5bXlyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNjczOTksImV4cCI6MjA5Mzk0MzM5OX0.f4jtslTFMnn0OhwiEhU7A_O6spowX6h4GEbHQ22hIEM';
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
     let cursosData = [];
 
     async function carregar() {
@@ -95,16 +92,11 @@
     function matricular(cursoId) {
         const curso = cursosData.find(c => c.id === cursoId);
         if (!curso) return;
-
         if (curso.gratis) {
             alert(`✅ Curso "${curso.nome}" liberado! Acesse o painel para começar.`);
             return;
         }
-
-        // Exibe modal de pagamento
-        document.getElementById('pixTitulo').textContent = `Pagamento via PIX`;
         document.getElementById('pixValor').textContent = `R$ ${curso.preco.toFixed(2)}`;
-        document.getElementById('pixChave').textContent = 'guilermo_monteiro@hotmail.com';
         document.getElementById('btnNotificar').onclick = () => notificarPagamento(curso.nome, curso.preco);
         document.getElementById('modalPix').classList.add('show');
     }
@@ -120,7 +112,6 @@
         if (e && e.target !== document.getElementById('modalPix')) return;
         document.getElementById('modalPix').classList.remove('show');
     }
-
     document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharModalPix(); });
 </script>
 </body>
