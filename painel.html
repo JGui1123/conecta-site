@@ -42,9 +42,8 @@
             <button class="nav-item" onclick="showTab('vagas', this)">💼 Minhas Vagas</button>
             <button class="nav-item" onclick="showTab('produtos', this)">📦 Meus Produtos</button>
             <button class="nav-item" onclick="showTab('candidaturas', this)">📋 Candidaturas</button>
-            <!-- NOVO LINK PARA CAPACITAÇÃO -->
-            <a href="capacitacao.html" class="nav-item">🎓 Capacitação</a>
-            <!-- LINK PARA PUBLICAR VAGA (será ocultado para Pessoa Física) -->
+            <button class="nav-item" onclick="showTab('cursos', this)">🎓 Meus Cursos</button>
+            <a href="capacitacao.html" class="nav-item">📚 Capacitação</a>
             <a href="publicar-vaga.html" class="nav-item" id="linkPublicarVaga">➕ Publicar Vaga</a>
             <a href="index.html" class="nav-item">🏠 Voltar ao site</a>
             <a href="login.html" class="nav-item" style="color:#fca5a5">🚪 Sair</a>
@@ -77,6 +76,7 @@
                     </select>
                     <input type="number" id="curPrecoUsuario" placeholder="Preço (R$) - 0 para gratuito" class="form-control" step="0.01" value="0">
                     <textarea id="curDescUsuario" placeholder="Descrição" class="form-control" rows="3"></textarea>
+                    <input type="text" id="curImagensUsuario" placeholder="URLs das imagens (até 3, separe por vírgula)" class="form-control">
                     <label><input type="checkbox" id="curGratisUsuario"> Curso gratuito</label>
                     <button type="submit" class="btn btn-primary">Publicar Curso</button>
                     <button type="button" class="btn btn-ghost" onclick="document.getElementById('formCursoWrap').style.display='none'">Cancelar</button>
@@ -86,6 +86,7 @@
         <div class="tab" id="tab-vagas"><h1 class="page-title">Minhas Vagas</h1><div id="userVagas"></div></div>
         <div class="tab" id="tab-produtos"><h1 class="page-title">Meus Produtos</h1><div id="userProdutos"></div></div>
         <div class="tab" id="tab-candidaturas"><h1 class="page-title">Minhas Candidaturas</h1><div id="userCandidaturas"></div></div>
+        <div class="tab" id="tab-cursos"><h1 class="page-title">Meus Cursos</h1><div id="userCursos"></div></div>
     </main>
 </div>
 
@@ -94,16 +95,14 @@
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6Y3ljYm1ubnBoeXdkenZ5bXlyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNjczOTksImV4cCI6MjA5Mzk0MzM5OX0.f4jtslTFMnn0OhwiEhU7A_O6spowX6h4GEbHQ22hIEM';
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     let user = null;
-    let perfilUsuario = null; // armazenará o tipo de perfil
+    let perfilUsuario = null;
 
     async function init() {
         const { data: { session } } = await db.auth.getSession();
         if (!session) { window.location.href = 'login.html'; return; }
         user = session.user;
-        // Obtém o tipo de perfil para controle de acesso
         const { data: perfil } = await db.from('perfis').select('tipo_perfil').eq('id', user.id).single();
         perfilUsuario = perfil?.tipo_perfil || 'pessoa_fisica';
-        // Oculta links de publicação de vaga para Pessoa Física
         if (perfilUsuario === 'pessoa_fisica') {
             document.getElementById('linkPublicarVaga').style.display = 'none';
             document.getElementById('cardPublicarVaga').style.display = 'none';
@@ -112,6 +111,7 @@
         carregarVagas();
         carregarProdutos();
         carregarCandidaturas();
+        carregarCursos();
     }
     init();
 
@@ -120,6 +120,9 @@
         document.getElementById('tab-' + tab).classList.add('active');
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
         if (el) el.classList.add('active');
+        // Recarregar dados da aba, se necessário
+        const loaders = { vagas: carregarVagas, produtos: carregarProdutos, candidaturas: carregarCandidaturas, cursos: carregarCursos };
+        if (loaders[tab]) loaders[tab]();
     }
 
     async function carregarDashboard() {
@@ -165,6 +168,24 @@
         el.innerHTML = data.map(c => `<div style="background:var(--cn-paper);border:1px solid var(--cn-line);border-radius:var(--cn-radius);padding:1rem;margin-bottom:1rem"><strong>${c.nome_candidato}</strong> para ${c.vaga_titulo || 'Vaga'}<br><small>Status: ${c.status}</small></div>`).join('');
     }
 
+    async function carregarCursos() {
+        const { data } = await db.from('matriculas').select('curso_id, cursos(nome, categoria, duracao)').eq('user_id', user.id).eq('status', 'ativo');
+        const el = document.getElementById('userCursos');
+        if (!data || !data.length) {
+            el.innerHTML = '<div class="empty-state"><h3>Nenhum curso</h3><p>Você ainda não se matriculou em nenhum curso.</p></div>';
+            return;
+        }
+        el.innerHTML = data.map(m => `
+            <div style="background:var(--cn-paper);border:1px solid var(--cn-line);border-radius:var(--cn-radius);padding:1rem;margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                    <strong>${m.cursos?.nome || 'Curso removido'}</strong>
+                    <div style="font-size:.8rem;color:var(--cn-mute);">${m.cursos?.categoria || ''} · ${m.cursos?.duracao || ''}</div>
+                </div>
+                <a href="curso-aula.html?id=${m.curso_id}" class="btn btn-primary">Acessar aula →</a>
+            </div>
+        `).join('');
+    }
+
     function mostrarFormCurso() {
         document.getElementById('formCursoWrap').style.display = 'block';
         document.getElementById('formCursoWrap').scrollIntoView({ behavior: 'smooth' });
@@ -179,17 +200,11 @@
         const preco = parseFloat(document.getElementById('curPrecoUsuario').value) || 0;
         const descricao = document.getElementById('curDescUsuario').value;
         const gratis = document.getElementById('curGratisUsuario').checked;
+        const imagensRaw = document.getElementById('curImagensUsuario').value;
+        const imagens = imagensRaw ? imagensRaw.split(',').map(u => u.trim()).filter(u => u).slice(0, 3) : [];
 
         const { error } = await db.from('cursos').insert([{
-            nome,
-            categoria,
-            duracao,
-            nivel,
-            preco,
-            descricao,
-            gratis,
-            ativo: true,
-            imagens: []
+            nome, categoria, duracao, nivel, preco, descricao, gratis, ativo: true, imagens
         }]);
 
         if (error) {
