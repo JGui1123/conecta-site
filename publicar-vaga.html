@@ -6,35 +6,35 @@
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --cn-ink: #0A1628; --cn-primary: #1E5CFF; --cn-primary-d: #1748CC; --cn-primary-l: #EAF1FF; --cn-accent: #FF7A45; --cn-bone: #F7F5F0; --cn-paper: #FFFFFF; --cn-line: #E6E2D9; --cn-mute: #6B7280; --cn-font-display: 'Sora', sans-serif; --cn-font-body: 'Inter', sans-serif; --cn-radius: 12px; }
-        body { font-family: var(--cn-font-body); background: var(--cn-bone); color: var(--cn-ink); margin: 0; }
-        .layout { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
-        .sidebar { background: var(--cn-ink); padding: 1.5rem 0; position: sticky; top: 0; height: 100vh; }
-        .sb-logo { display: flex; align-items: center; gap: 8px; padding: 0 1.5rem 1.5rem; text-decoration: none; }
-        .sb-logo svg { width: 30px; height: 30px; }
-        .sb-logo span { font-family: var(--cn-font-display); font-weight: 700; color: #fff; font-size: 1.1rem; }
-        .sb-logo span em { color: var(--cn-primary); font-style: normal; }
-        .nav-item { display: flex; align-items: center; gap: .7rem; padding: .6rem 1.5rem; color: rgba(255,255,255,.65); font-size: .85rem; text-decoration: none; transition: .2s; }
-        .nav-item:hover { background: rgba(255,255,255,.08); color: #fff; }
-        .main { padding: 2rem 2.5rem; max-width: 900px; }
-        .page-title { font-family: var(--cn-font-display); font-size: 1.6rem; font-weight: 700; margin-bottom: 1.5rem; }
-        .form-card { background: var(--cn-paper); border: 1px solid var(--cn-line); border-radius: var(--cn-radius); padding: 1.5rem; margin-bottom: 1.5rem; }
-        .section-title { font-family: var(--cn-font-display); font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 10px; }
-        .step-badge { background: var(--cn-primary); color: #fff; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .75rem; flex-shrink: 0; }
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-        .input-group { margin-bottom: 1rem; }
-        label { display: block; font-size: .78rem; font-weight: 600; margin-bottom: 5px; color: var(--cn-ink); }
-        .form-control { width: 100%; padding: .7rem; border: 1.5px solid var(--cn-line); border-radius: 8px; font-family: var(--cn-font-body); font-size: .85rem; outline: none; background: var(--cn-paper); }
-        .form-control:focus { border-color: var(--cn-primary); box-shadow: 0 0 0 3px var(--cn-primary-l); }
-        .radio-group { display: flex; gap: 8px; flex-wrap: wrap; }
-        .radio-item { flex: 1; min-width: 80px; } .radio-item input { display: none; }
-        .radio-item label { display: block; text-align: center; padding: 8px; border: 1px solid var(--cn-line); border-radius: 6px; cursor: pointer; font-size: .78rem; font-weight: 600; transition: .2s; }
-        .radio-item input:checked + label { background: var(--cn-primary-l); border-color: var(--cn-primary); color: var(--cn-primary); }
-        .actions { display: flex; gap: 1rem; margin-top: 2rem; }
-        .btn { padding: .85rem 1.5rem; border-radius: 8px; font-weight: 700; cursor: pointer; border: none; font-size: .85rem; transition: .2s; text-decoration: none; text-align: center; font-family: var(--cn-font-body); }
-        .btn-primary { background: var(--cn-primary); color: #fff; flex: 2; } .btn-primary:hover { background: var(--cn-primary-d); }
-        .btn-secondary { background: var(--cn-paper); color: var(--cn-mute); border: 1px solid var(--cn-line); flex: 1; } .btn-secondary:hover { background: var(--cn-bone); }
-        @media (max-width: 768px) { .layout { grid-template-columns: 1fr; } .sidebar { height: auto; position: relative; } }
+        :root { --cn-ink:#0A1628; --cn-primary:#1E5CFF; --cn-primary-d:#1748CC; --cn-primary-l:#EAF1FF; --cn-accent:#FF7A45; --cn-bone:#F7F5F0; --cn-paper:#FFFFFF; --cn-line:#E6E2D9; --cn-mute:#6B7280; --cn-font-display:'Sora',sans-serif; --cn-font-body:'Inter',sans-serif; --cn-radius:12px; }
+        body { font-family:var(--cn-font-body); background:var(--cn-bone); color:var(--cn-ink); margin:0; }
+        .layout { display:grid; grid-template-columns:260px 1fr; min-height:100vh; }
+        .sidebar { background:var(--cn-ink); padding:1.5rem 0; position:sticky; top:0; height:100vh; }
+        .sb-logo { display:flex; align-items:center; gap:8px; padding:0 1.5rem 1.5rem; text-decoration:none; }
+        .sb-logo svg { width:30px; height:30px; }
+        .sb-logo span { font-family:var(--cn-font-display); font-weight:700; color:#fff; font-size:1.1rem; }
+        .sb-logo span em { color:var(--cn-primary); font-style:normal; }
+        .nav-item { display:flex; align-items:center; gap:.7rem; padding:.6rem 1.5rem; color:rgba(255,255,255,.65); font-size:.85rem; text-decoration:none; transition:.2s; }
+        .nav-item:hover { background:rgba(255,255,255,.08); color:#fff; }
+        .main { padding:2rem 2.5rem; max-width:900px; }
+        .page-title { font-family:var(--cn-font-display); font-size:1.6rem; font-weight:700; margin-bottom:1.5rem; }
+        .form-card { background:var(--cn-paper); border:1px solid var(--cn-line); border-radius:var(--cn-radius); padding:1.5rem; margin-bottom:1.5rem; }
+        .section-title { font-family:var(--cn-font-display); font-weight:700; margin-bottom:1rem; display:flex; align-items:center; gap:10px; }
+        .step-badge { background:var(--cn-primary); color:#fff; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.75rem; flex-shrink:0; }
+        .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+        .input-group { margin-bottom:1rem; }
+        label { display:block; font-size:.78rem; font-weight:600; margin-bottom:5px; color:var(--cn-ink); }
+        .form-control { width:100%; padding:.7rem; border:1.5px solid var(--cn-line); border-radius:8px; font-family:var(--cn-font-body); font-size:.85rem; outline:none; background:var(--cn-paper); }
+        .form-control:focus { border-color:var(--cn-primary); box-shadow:0 0 0 3px var(--cn-primary-l); }
+        .radio-group { display:flex; gap:8px; flex-wrap:wrap; }
+        .radio-item { flex:1; min-width:80px; } .radio-item input { display:none; }
+        .radio-item label { display:block; text-align:center; padding:8px; border:1px solid var(--cn-line); border-radius:6px; cursor:pointer; font-size:.78rem; font-weight:600; transition:.2s; }
+        .radio-item input:checked + label { background:var(--cn-primary-l); border-color:var(--cn-primary); color:var(--cn-primary); }
+        .actions { display:flex; gap:1rem; margin-top:2rem; }
+        .btn { padding:.85rem 1.5rem; border-radius:8px; font-weight:700; cursor:pointer; border:none; font-size:.85rem; transition:.2s; text-decoration:none; text-align:center; font-family:var(--cn-font-body); }
+        .btn-primary { background:var(--cn-primary); color:#fff; flex:2; } .btn-primary:hover { background:var(--cn-primary-d); }
+        .btn-secondary { background:var(--cn-paper); color:var(--cn-mute); border:1px solid var(--cn-line); flex:1; } .btn-secondary:hover { background:var(--cn-bone); }
+        @media(max-width:768px){ .layout{grid-template-columns:1fr} .sidebar{height:auto;position:relative;display:flex;align-items:center;padding:1rem} .sidebar nav{display:flex} .nav-item{padding:.5rem .8rem;font-size:.75rem} .form-grid{grid-template-columns:1fr} }
     </style>
 </head>
 <body>
@@ -88,6 +88,27 @@
     const SUPABASE_URL = 'https://pzcycbmnnphywdzvymyr.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6Y3ljYm1ubnBoeXdkenZ5bXlyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNjczOTksImV4cCI6MjA5Mzk0MzM5OX0.f4jtslTFMnn0OhwiEhU7A_O6spowX6h4GEbHQ22hIEM';
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    let userId = null;
+
+    // ═══ VERIFICA SE O USUÁRIO PODE PUBLICAR VAGA ═══
+    async function verificarPermissao() {
+        const { data: { session } } = await db.auth.getSession();
+        if (!session) {
+            window.location.href = 'login.html';
+            return false;
+        }
+        const { data: perfil } = await db.from('perfis').select('tipo_perfil').eq('id', session.user.id).single();
+        if (!perfil || perfil.tipo_perfil === 'pessoa_fisica') {
+            alert('Apenas perfis Autônomo ou Empresa podem publicar vagas.');
+            window.location.href = 'painel.html';
+            return false;
+        }
+        userId = session.user.id;
+        return true;
+    }
+
+    // Inicializa a verificação e só permite o acesso se o perfil for adequado
+    verificarPermissao();
 
     document.getElementById('area').addEventListener('change', function() {
         document.getElementById('outro_wrapper').style.display = this.value === 'Outro' ? 'block' : 'none';
@@ -95,8 +116,14 @@
 
     async function publicar(e) {
         e.preventDefault();
+        if (!userId) {
+            alert('Sessão expirada. Faça login novamente.');
+            window.location.href = 'login.html';
+            return;
+        }
         const area = document.getElementById('area').value === 'Outro' ? document.getElementById('area_outro').value : document.getElementById('area').value;
         const vaga = {
+            user_id: userId,
             titulo: document.getElementById('titulo').value,
             empresa: document.getElementById('empresa').value,
             cidade: document.getElementById('cidade').value,
