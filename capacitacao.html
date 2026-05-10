@@ -21,6 +21,14 @@
         .curso-badge { position: absolute; top: .75rem; left: .75rem; font-size: .68rem; font-weight: 700; padding: 4px 11px; border-radius: 20px; } .cb-gratis { background: #D1FAE5; color: #065F46; } .cb-pago { background: #FEF3C7; color: #92400E; }
         .curso-body { padding: 1.5rem; } .curso-cat { font-size: .72rem; font-weight: 600; color: var(--cn-primary); text-transform: uppercase; margin-bottom: .4rem; } .curso-nome { font-family: var(--cn-font-display); font-size: 1.05rem; font-weight: 700; margin-bottom: .5rem; } .curso-desc { font-size: .84rem; color: var(--cn-mute); margin-bottom: 1rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         .curso-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--cn-line); padding-top: 1rem; } .curso-preco { font-family: var(--cn-font-display); font-size: 1.1rem; font-weight: 700; }
+        .btn-matricula { background: var(--cn-primary); color: #fff; border: none; border-radius: 8px; padding: .5rem 1.1rem; font-size: .82rem; font-weight: 600; cursor: pointer; font-family: var(--cn-font-body); transition: all .2s; }
+        .btn-matricula:hover { background: var(--cn-primary-d); }
+        /* modal */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(10,22,40,.65); z-index: 500; display: none; align-items: center; justify-content: center; padding: 1.5rem; backdrop-filter: blur(4px); }
+        .modal-overlay.show { display: flex; }
+        .modal-box { background: var(--cn-paper); border-radius: 16px; max-width: 500px; width: 100%; padding: 2rem; box-shadow: 0 20px 60px rgba(10,22,40,.3); text-align: center; }
+        .modal-box h3 { font-family: var(--cn-font-display); margin-bottom: 1rem; }
+        .pix-code { background: #f1f5f9; padding: 1rem; border-radius: 12px; font-size: 1.1rem; user-select: all; margin: 1rem 0; }
         @media (max-width: 900px) { .nav-links { display: none; } }
     </style>
 </head>
@@ -33,31 +41,87 @@
 <div class="hero"><h1>Capacitação Profissional</h1><p>Cursos para você se destacar no mercado</p></div>
 <div class="page-wrap"><div class="cursos-grid" id="cursosGrid"></div></div>
 
+<!-- Modal para pagamento PIX -->
+<div class="modal-overlay" id="modalPix" onclick="fecharModalPix(event)">
+    <div class="modal-box" onclick="event.stopPropagation()">
+        <h3 id="pixTitulo">Pagamento via PIX</h3>
+        <p>Para se inscrever, faça um PIX no valor de <strong id="pixValor"></strong> para:</p>
+        <div class="pix-code" id="pixChave">guilermo_monteiro@hotmail.com</div>
+        <p>Após o pagamento, clique abaixo para notificar o administrador.</p>
+        <button class="btn-matricula" id="btnNotificar" style="width:100%;">Já paguei – Notificar via WhatsApp</button>
+        <button class="btn-matricula" style="background: var(--cn-mute); margin-top: .5rem; width:100%;" onclick="fecharModalPix()">Cancelar</button>
+    </div>
+</div>
+
 <script>
     const SUPABASE_URL = 'https://pzcycbmnnphywdzvymyr.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6Y3ljYm1ubnBoeXdkenZ5bXlyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNjczOTksImV4cCI6MjA5Mzk0MzM5OX0.f4jtslTFMnn0OhwiEhU7A_O6spowX6h4GEbHQ22hIEM';
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+    let cursosData = [];
+
     async function carregar() {
         const { data } = await db.from('cursos').select('*').eq('ativo', true).order('criado_em', { ascending: false });
-        const grid = document.getElementById('cursosGrid');
-        if (!data || !data.length) {
-            grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--cn-mute)">Nenhum curso disponível no momento.</p>';
-            return;
-        }
-        grid.innerHTML = data.map(c => `
-            <div class="curso-card">
-                <div class="curso-thumb" style="background-image:url('${(c.imagens||[])[0]||''}')">${!(c.imagens||[])[0]?'🎓':''}<span class="curso-badge ${c.gratis?'cb-gratis':'cb-pago'}">${c.gratis?'Grátis':'Pago'}</span></div>
-                <div class="curso-body">
-                    <div class="curso-cat">${c.categoria}</div>
-                    <div class="curso-nome">${c.nome}</div>
-                    <div class="curso-desc">${c.descricao || ''}</div>
-                    <div class="curso-footer"><div class="curso-preco">${c.gratis ? 'Grátis' : 'R$ ' + (c.preco||0).toFixed(2)}</div></div>
-                </div>
-            </div>
-        `).join('');
+        cursosData = data || [];
+        renderizar();
     }
     carregar();
+
+    function renderizar() {
+        const grid = document.getElementById('cursosGrid');
+        if (!cursosData.length) {
+            grid.innerHTML = '<p style="grid-column:1/-1; text-align:center; padding:3rem;">Nenhum curso disponível no momento.</p>';
+            return;
+        }
+        grid.innerHTML = cursosData.map(c => {
+            const thumbUrl = (c.imagens && c.imagens.length > 0) ? c.imagens[0] : '';
+            return `
+                <div class="curso-card">
+                    <div class="curso-thumb" style="background-image:url('${thumbUrl}')">${!thumbUrl ? '🎓' : ''}<span class="curso-badge ${c.gratis ? 'cb-gratis' : 'cb-pago'}">${c.gratis ? 'Grátis' : 'Pago'}</span></div>
+                    <div class="curso-body">
+                        <div class="curso-cat">${c.categoria}</div>
+                        <div class="curso-nome">${c.nome}</div>
+                        <div class="curso-desc">${c.descricao || ''}</div>
+                        <div class="curso-footer">
+                            <div class="curso-preco">${c.gratis ? 'Grátis' : 'R$ ' + (c.preco || 0).toFixed(2)}</div>
+                            <button class="btn-matricula" onclick="matricular(${c.id})">${c.gratis ? 'Acessar agora' : 'Matricular-se'} →</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function matricular(cursoId) {
+        const curso = cursosData.find(c => c.id === cursoId);
+        if (!curso) return;
+
+        if (curso.gratis) {
+            alert(`✅ Curso "${curso.nome}" liberado! Acesse o painel para começar.`);
+            return;
+        }
+
+        // Exibe modal de pagamento
+        document.getElementById('pixTitulo').textContent = `Pagamento via PIX`;
+        document.getElementById('pixValor').textContent = `R$ ${curso.preco.toFixed(2)}`;
+        document.getElementById('pixChave').textContent = 'guilermo_monteiro@hotmail.com';
+        document.getElementById('btnNotificar').onclick = () => notificarPagamento(curso.nome, curso.preco);
+        document.getElementById('modalPix').classList.add('show');
+    }
+
+    function notificarPagamento(nomeCurso, preco) {
+        const mensagem = `Olá, realizei o pagamento do curso "${nomeCurso}" no valor de R$ ${preco.toFixed(2)}. Meu nome é [seu nome] e meu WhatsApp é [seu número].`;
+        const url = `https://wa.me/351962890061?text=${encodeURIComponent(mensagem)}`;
+        window.open(url, '_blank');
+        fecharModalPix();
+    }
+
+    function fecharModalPix(e) {
+        if (e && e.target !== document.getElementById('modalPix')) return;
+        document.getElementById('modalPix').classList.remove('show');
+    }
+
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharModalPix(); });
 </script>
 </body>
 </html>
