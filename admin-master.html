@@ -360,12 +360,51 @@ async function carregarParceiros(){
 }
 function abrirFormParceiro(parceiro=null){
   const wrap=document.getElementById('form-parceiro-wrap');wrap.style.display='block';
-  wrap.innerHTML=`<div class="form-card"><h3 style="font-family:var(--cn-font-display);font-weight:700;margin-bottom:1rem">${parceiro?'Editar':'Novo'} parceiro</h3><form onsubmit="salvarParceiro(event,${parceiro?.id||'null'})"><div class="form-row"><div class="form-group"><label>Nome *</label><input class="form-control" id="par-nome" required value="${parceiro?.nome||''}"></div><div class="form-group"><label>Ramo *</label><input class="form-control" id="par-ramo" required value="${parceiro?.ramo||''}"></div></div><div class="form-row full"><div class="form-group"><label>Descrição *</label><textarea class="form-control" id="par-desc" required>${parceiro?.descricao||''}</textarea></div></div><div class="form-row"><div class="form-group"><label>Cidade</label><input class="form-control" id="par-cidade" value="${parceiro?.cidade||''}"></div><div class="form-group"><label>WhatsApp</label><input class="form-control" id="par-wpp" value="${parceiro?.whatsapp||''}"></div></div><div class="form-row"><div class="form-group"><label>URL da imagem do banner</label><input class="form-control" id="par-banner" placeholder="https://images.unsplash.com/..." value="${parceiro?.imagem_banner_url||''}"></div><div class="form-group"><label>Ordem</label><input class="form-control" type="number" id="par-ordem" value="${parceiro?.ordem??0}"></div></div><div class="form-row full"><label><input type="checkbox" id="par-ativo" ${parceiro?.ativo!==false?'checked':''}> Ativo</label></div><div class="form-actions"><button type="button" class="btn btn-ghost" onclick="document.getElementById('form-parceiro-wrap').style.display='none'">Cancelar</button><button type="submit" class="btn btn-primary">${parceiro?'Salvar':'Adicionar'}</button></div></form></div>`;
+  wrap.innerHTML=`<div class="form-card"><h3 style="font-family:var(--cn-font-display);font-weight:700;margin-bottom:1rem">${parceiro?'Editar':'Novo'} parceiro</h3>
+    <form onsubmit="salvarParceiro(event,${parceiro?.id||'null'})">
+      <div class="form-row">
+        <div class="form-group"><label>Nome *</label><input class="form-control" id="par-nome" required value="${parceiro?.nome||''}"></div>
+        <div class="form-group"><label>Ramo *</label><input class="form-control" id="par-ramo" required value="${parceiro?.ramo||''}"></div>
+      </div>
+      <div class="form-row full"><div class="form-group"><label>Descrição *</label><textarea class="form-control" id="par-desc" required>${parceiro?.descricao||''}</textarea></div></div>
+      <div class="form-row">
+        <div class="form-group"><label>Cidade</label><input class="form-control" id="par-cidade" value="${parceiro?.cidade||''}"></div>
+        <div class="form-group"><label>WhatsApp</label><input class="form-control" id="par-wpp" value="${parceiro?.whatsapp||''}"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>URL da imagem do banner</label><input class="form-control" id="par-banner" placeholder="https://images.unsplash.com/..." value="${parceiro?.imagem_banner_url||''}"></div>
+        <div class="form-group"><label>Ordem</label><input class="form-control" type="number" id="par-ordem" value="${parceiro?.ordem??0}"></div>
+      </div>
+      <div class="form-row full"><div class="form-group"><label>URL do vídeo (YouTube/iframe)</label><input class="form-control" id="par-video" value="${parceiro?.video_url||''}"></div></div>
+      <div class="form-row full"><div class="form-group"><label>URL do áudio (podcast)</label><input class="form-control" id="par-audio" value="${parceiro?.audio_url||''}"></div></div>
+      <div class="form-row full"><div class="form-group"><label>Localização (iframe Google Maps)</label><textarea class="form-control" id="par-localizacao">${parceiro?.localizacao||''}</textarea></div></div>
+      <div class="form-row full"><div class="form-group"><label>Conteúdo da página (HTML permitido)</label><textarea class="form-control" id="par-conteudo">${parceiro?.pagina_conteudo||''}</textarea></div></div>
+      <div class="form-row full"><div class="form-group"><label>Contato extra</label><input class="form-control" id="par-contato-extra" value="${parceiro?.contato_extra||''}"></div></div>
+      <div class="form-row full"><div class="form-group"><label>URLs das fotos (até 5, uma por linha)</label><textarea class="form-control" id="par-fotos">${(parceiro?.fotos||[]).join('\n')}</textarea></div></div>
+      <div class="form-row full"><label><input type="checkbox" id="par-ativo" ${parceiro?.ativo!==false?'checked':''}> Ativo</label></div>
+      <div class="form-actions"><button type="button" class="btn btn-ghost" onclick="document.getElementById('form-parceiro-wrap').style.display='none'">Cancelar</button><button type="submit" class="btn btn-primary">${parceiro?'Salvar':'Adicionar'}</button></div>
+    </form></div>`;
   wrap.scrollIntoView({behavior:'smooth'});
 }
 async function salvarParceiro(e,id){
   e.preventDefault();
-  const dados={nome:document.getElementById('par-nome').value,ramo:document.getElementById('par-ramo').value,descricao:document.getElementById('par-desc').value,cidade:document.getElementById('par-cidade').value||null,whatsapp:document.getElementById('par-wpp').value||null,imagem_banner_url:document.getElementById('par-banner').value||null,ordem:parseInt(document.getElementById('par-ordem').value)||0,ativo:document.getElementById('par-ativo').checked};
+  const fotos = document.getElementById('par-fotos').value.trim().split('\n').filter(u=>u.trim()).slice(0,5);
+  const dados={
+    nome:document.getElementById('par-nome').value,
+    ramo:document.getElementById('par-ramo').value,
+    descricao:document.getElementById('par-desc').value,
+    cidade:document.getElementById('par-cidade').value||null,
+    whatsapp:document.getElementById('par-wpp').value||null,
+    imagem_banner_url:document.getElementById('par-banner').value||null,
+    video_url:document.getElementById('par-video').value||null,
+    audio_url:document.getElementById('par-audio').value||null,
+    localizacao:document.getElementById('par-localizacao').value||null,
+    pagina_conteudo:document.getElementById('par-conteudo').value||null,
+    contato_extra:document.getElementById('par-contato-extra').value||null,
+    fotos:fotos,
+    ordem:parseInt(document.getElementById('par-ordem').value)||0,
+    ativo:document.getElementById('par-ativo').checked
+  };
   const res=id?await db.from('parceiros').update(dados).eq('id',id):await db.from('parceiros').insert([dados]);
   if(res.error)return showToast('❌ '+res.error.message,'error');
   showToast(id?'✅ Parceiro atualizado!':'✅ Parceiro adicionado!','success');
