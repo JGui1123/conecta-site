@@ -428,9 +428,7 @@ async function carregarCursos(){
 }
 function abrirFormCurso(curso=null){
   const wrap=document.getElementById('form-curso-wrap');wrap.style.display='block';
-  wrap.innerHTML=`<div class="form-card"><h3 style="font-family:var(--cn-font-display);font-weight:700;margin-bottom:1rem">${cur
-
-so?'Editar':'Novo'} curso</h3><form onsubmit="salvarCurso(event,${curso?.id||'null'})">
+  wrap.innerHTML=`<div class="form-card"><h3 style="font-family:var(--cn-font-display);font-weight:700;margin-bottom:1rem">${curso?'Editar':'Novo'} curso</h3><form onsubmit="salvarCurso(event,${curso?.id||'null'})">
     <div class="form-row full"><div class="form-group"><label>Nome *</label><input class="form-control" id="cur-nome" required value="${curso?.nome||''}"></div></div>
     <div class="form-row"><div class="form-group"><label>Categoria *</label><input class="form-control" id="cur-cat" required value="${curso?.categoria||''}"></div><div class="form-group"><label>Duração</label><input class="form-control" id="cur-dur" value="${curso?.duracao||''}"></div></div>
     <div class="form-row"><div class="form-group"><label>Nível</label><select class="form-control" id="cur-niv"><option value="Iniciante" ${curso?.nivel==='Iniciante'?'selected':''}>Iniciante</option><option value="Intermediário" ${curso?.nivel==='Intermediário'?'selected':''}>Intermediário</option><option value="Avançado" ${curso?.nivel==='Avançado'?'selected':''}>Avançado</option></select></div><div class="form-group"><label>Preço (R$)</label><input class="form-control" type="number" step="0.01" id="cur-preco" value="${curso?.preco||0}"></div></div>
