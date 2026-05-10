@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Publicar Vaga — coNecta</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --cn-ink: #0A1628; --cn-primary: #1E5CFF; --cn-primary-d: #1748CC; --cn-primary-l: #EAF1FF; --cn-accent: #FF7A45; --cn-bone: #F7F5F0; --cn-paper: #FFFFFF; --cn-line: #E6E2D9; --cn-mute: #6B7280; --cn-font-display: 'Sora', sans-serif; --cn-font-body: 'Inter', sans-serif; --cn-radius: 12px; }
+        body { font-family: var(--cn-font-body); background: var(--cn-bone); color: var(--cn-ink); margin: 0; }
+        .layout { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
+        .sidebar { background: var(--cn-ink); padding: 1.5rem 0; position: sticky; top: 0; height: 100vh; }
+        .sb-logo { display: flex; align-items: center; gap: 8px; padding: 0 1.5rem 1.5rem; text-decoration: none; }
+        .sb-logo svg { width: 30px; height: 30px; }
+        .sb-logo span { font-family: var(--cn-font-display); font-weight: 700; color: #fff; font-size: 1.1rem; }
+        .sb-logo span em { color: var(--cn-primary); font-style: normal; }
+        .nav-item { display: flex; align-items: center; gap: .7rem; padding: .6rem 1.5rem; color: rgba(255,255,255,.65); font-size: .85rem; text-decoration: none; transition: .2s; }
+        .nav-item:hover { background: rgba(255,255,255,.08); color: #fff; }
+        .main { padding: 2rem 2.5rem; max-width: 900px; }
+        .page-title { font-family: var(--cn-font-display); font-size: 1.6rem; font-weight: 700; margin-bottom: 1.5rem; }
+        .form-card { background: var(--cn-paper); border: 1px solid var(--cn-line); border-radius: var(--cn-radius); padding: 1.5rem; margin-bottom: 1.5rem; }
+        .section-title { font-family: var(--cn-font-display); font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 10px; }
+        .step-badge { background: var(--cn-primary); color: #fff; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .75rem; flex-shrink: 0; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .input-group { margin-bottom: 1rem; }
+        label { display: block; font-size: .78rem; font-weight: 600; margin-bottom: 5px; color: var(--cn-ink); }
+        .form-control { width: 100%; padding: .7rem; border: 1.5px solid var(--cn-line); border-radius: 8px; font-family: var(--cn-font-body); font-size: .85rem; outline: none; background: var(--cn-paper); }
+        .form-control:focus { border-color: var(--cn-primary); box-shadow: 0 0 0 3px var(--cn-primary-l); }
+        .radio-group { display: flex; gap: 8px; flex-wrap: wrap; }
+        .radio-item { flex: 1; min-width: 80px; } .radio-item input { display: none; }
+        .radio-item label { display: block; text-align: center; padding: 8px; border: 1px solid var(--cn-line); border-radius: 6px; cursor: pointer; font-size: .78rem; font-weight: 600; transition: .2s; }
+        .radio-item input:checked + label { background: var(--cn-primary-l); border-color: var(--cn-primary); color: var(--cn-primary); }
+        .actions { display: flex; gap: 1rem; margin-top: 2rem; }
+        .btn { padding: .85rem 1.5rem; border-radius: 8px; font-weight: 700; cursor: pointer; border: none; font-size: .85rem; transition: .2s; text-decoration: none; text-align: center; font-family: var(--cn-font-body); }
+        .btn-primary { background: var(--cn-primary); color: #fff; flex: 2; } .btn-primary:hover { background: var(--cn-primary-d); }
+        .btn-secondary { background: var(--cn-paper); color: var(--cn-mute); border: 1px solid var(--cn-line); flex: 1; } .btn-secondary:hover { background: var(--cn-bone); }
+        @media (max-width: 768px) { .layout { grid-template-columns: 1fr; } .sidebar { height: auto; position: relative; } }
+    </style>
+</head>
+<body>
+<div class="layout">
+    <aside class="sidebar">
+        <a href="index.html" class="sb-logo"><svg width="30" height="30" viewBox="0 0 110 110" fill="none"><path d="M22 92V28L88 84V28" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><circle cx="88" cy="28" r="9" fill="#FF7A45"/><circle cx="22" cy="92" r="9" fill="#1E5CFF"/></svg><span>co<em>N</em>ecta</span></a>
+        <nav>
+            <a href="painel.html" class="nav-item">📊 Dashboard</a>
+            <a href="painel.html#vagas" class="nav-item">💼 Minhas Vagas</a>
+        </nav>
+    </aside>
+    <main class="main">
+        <h1 class="page-title">Publicar Nova Vaga</h1>
+        <form id="vagaForm" onsubmit="publicar(event)">
+            <div class="form-card">
+                <div class="section-title"><span class="step-badge">1</span> Dados da Vaga</div>
+                <div class="input-group"><label>Título do Cargo *</label><input type="text" id="titulo" class="form-control" placeholder="Ex: Recepcionista" required></div>
+                <div class="form-grid">
+                    <div class="input-group"><label>Nome da Empresa *</label><input type="text" id="empresa" class="form-control" placeholder="Sua Empresa" required></div>
+                    <div class="input-group"><label>Cidade *</label><select id="cidade" class="form-control"><option>Pinheiro</option><option>Viana</option><option>Santa Inês</option><option>São Bento</option></select></div>
+                </div>
+            </div>
+            <div class="form-card">
+                <div class="section-title"><span class="step-badge">2</span> Contratação e Área</div>
+                <label>Tipo de Contrato *</label>
+                <div class="radio-group">
+                    <div class="radio-item"><input type="radio" name="tipo" id="clt" value="CLT" checked><label for="clt">CLT</label></div>
+                    <div class="radio-item"><input type="radio" name="tipo" id="pj" value="PJ"><label for="pj">PJ</label></div>
+                    <div class="radio-item"><input type="radio" name="tipo" id="diaria" value="Diária"><label for="diaria">Diária</label></div>
+                </div>
+                <div class="form-grid" style="margin-top:1.5rem">
+                    <div class="input-group"><label>Área de Atuação *</label><select id="area" class="form-control" required><option value="">Selecione</option><option>Administrativo</option><option>Vendas</option><option>Logística</option><option>Construção</option><option>Beleza</option><option>Gastronomia</option><option>Saúde</option><option>Educação</option><option>Tecnologia</option><option value="Outro">Outro</option></select></div>
+                    <div class="input-group"><label>Salário</label><input type="text" id="salario" class="form-control" placeholder="R$ 0,00"></div>
+                </div>
+                <div class="input-group" id="outro_wrapper" style="display:none;margin-top:10px"><label>Especifique a Área</label><input type="text" id="area_outro" class="form-control"></div>
+            </div>
+            <div class="form-card">
+                <div class="section-title"><span class="step-badge">3</span> Descrição e Contato</div>
+                <div class="input-group"><label>Descrição da Vaga</label><textarea class="form-control" id="descricao" rows="4" placeholder="Descreva as atividades, requisitos e benefícios..."></textarea></div>
+                <div class="input-group"><label>WhatsApp para Contato * (somente números)</label><input type="tel" id="whatsapp" class="form-control" placeholder="(99) 99999-9999" required></div>
+            </div>
+            <div class="actions">
+                <a href="painel.html" class="btn btn-secondary">← Cancelar</a>
+                <button type="submit" class="btn btn-primary">Publicar Vaga Agora</button>
+            </div>
+        </form>
+    </main>
+</div>
+
+<script>
+    const SUPABASE_URL = 'https://pzcycbmnnphywdzvymyr.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6Y3ljYm1ubnBoeXdkenZ5bXlyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNjczOTksImV4cCI6MjA5Mzk0MzM5OX0.f4jtslTFMnn0OhwiEhU7A_O6spowX6h4GEbHQ22hIEM';
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    document.getElementById('area').addEventListener('change', function() {
+        document.getElementById('outro_wrapper').style.display = this.value === 'Outro' ? 'block' : 'none';
+    });
+
+    async function publicar(e) {
+        e.preventDefault();
+        const area = document.getElementById('area').value === 'Outro' ? document.getElementById('area_outro').value : document.getElementById('area').value;
+        const vaga = {
+            titulo: document.getElementById('titulo').value,
+            empresa: document.getElementById('empresa').value,
+            cidade: document.getElementById('cidade').value,
+            tipo_contrato: document.querySelector('input[name="tipo"]:checked').value,
+            area: area,
+            salario: document.getElementById('salario').value || 'A combinar',
+            descricao: document.getElementById('descricao').value,
+            whatsapp_contato: document.getElementById('whatsapp').value,
+            ativa: true,
+            aprovada: false
+        };
+        const { error } = await db.from('vagas').insert([vaga]);
+        if (error) {
+            alert('Erro: ' + error.message);
+            return;
+        }
+        alert('✅ Vaga publicada e enviada para aprovação!');
+        window.location.href = 'painel.html';
+    }
+</script>
+</body>
+</html>

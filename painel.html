@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel — coNecta</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --cn-ink: #0A1628; --cn-primary: #1E5CFF; --cn-primary-d: #1748CC; --cn-primary-l: #EAF1FF; --cn-accent: #FF7A45; --cn-bone: #F7F5F0; --cn-paper: #FFFFFF; --cn-line: #E6E2D9; --cn-mute: #6B7280; --cn-font-display: 'Sora', sans-serif; --cn-font-body: 'Inter', sans-serif; --cn-radius: 12px; }
+        body { font-family: var(--cn-font-body); background: var(--cn-bone); color: var(--cn-ink); margin: 0; }
+        .layout { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
+        .sidebar { background: var(--cn-ink); padding: 1.5rem 0; position: sticky; top: 0; height: 100vh; }
+        .sb-logo { padding: 0 1.5rem 1.5rem; display: flex; align-items: center; gap: 8px; text-decoration: none; }
+        .sb-logo svg { width: 30px; height: 30px; }
+        .sb-logo span { font-family: var(--cn-font-display); font-weight: 700; color: #fff; font-size: 1.1rem; }
+        .nav-item { display: flex; align-items: center; gap: .7rem; padding: .6rem 1.5rem; color: rgba(255,255,255,.65); font-size: .85rem; text-decoration: none; transition: .2s; border: none; background: none; width: 100%; text-align: left; cursor: pointer; font-family: inherit; }
+        .nav-item:hover, .nav-item.active { background: rgba(255,255,255,.08); color: #fff; }
+        .nav-item.active { border-left: 3px solid var(--cn-primary); }
+        .main { padding: 2rem; }
+        .tab { display: none; } .tab.active { display: block; }
+        .page-title { font-family: var(--cn-font-display); font-size: 1.6rem; font-weight: 700; margin-bottom: 1.5rem; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+        .stat-card { background: var(--cn-paper); border: 1px solid var(--cn-line); border-radius: var(--cn-radius); padding: 1.25rem; }
+        .stat-valor { font-family: var(--cn-font-display); font-size: 1.8rem; font-weight: 700; } .stat-label { font-size: .75rem; color: var(--cn-mute); }
+        .empty-state { text-align: center; padding: 3rem; background: var(--cn-paper); border: 1px dashed var(--cn-line); border-radius: var(--cn-radius); }
+        .empty-state h3 { font-family: var(--cn-font-display); margin-bottom: .5rem; } .empty-state p { color: var(--cn-mute); margin-bottom: 1.5rem; }
+        .btn { display: inline-flex; align-items: center; gap: 5px; padding: .55rem 1.2rem; border-radius: 8px; font-weight: 600; cursor: pointer; border: none; font-family: var(--cn-font-body); font-size: .85rem; text-decoration: none; }
+        .btn-primary { background: var(--cn-primary); color: #fff; } .btn-primary:hover { background: var(--cn-primary-d); }
+        @media (max-width: 768px) { .layout { grid-template-columns: 1fr; } .sidebar { height: auto; position: relative; } }
+    </style>
+</head>
+<body>
+<div class="layout">
+    <aside class="sidebar">
+        <a href="index.html" class="sb-logo"><svg width="30" height="30" viewBox="0 0 110 110" fill="none"><path d="M22 92V28L88 84V28" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><circle cx="88" cy="28" r="9" fill="#FF7A45"/><circle cx="22" cy="92" r="9" fill="#1E5CFF"/></svg><span>coNecta</span></a>
+        <nav>
+            <button class="nav-item active" onclick="showTab('dashboard', this)">📊 Dashboard</button>
+            <button class="nav-item" onclick="showTab('vagas', this)">💼 Minhas Vagas</button>
+            <button class="nav-item" onclick="showTab('produtos', this)">📦 Meus Produtos</button>
+            <button class="nav-item" onclick="showTab('candidaturas', this)">📋 Candidaturas</button>
+            <a href="publicar-vaga.html" class="nav-item">➕ Publicar Vaga</a>
+            <a href="index.html" class="nav-item">🏠 Voltar ao site</a>
+            <a href="login.html" class="nav-item" style="color:#fca5a5">🚪 Sair</a>
+        </nav>
+    </aside>
+    <main class="main">
+        <div class="tab active" id="tab-dashboard">
+            <h1 class="page-title">Dashboard</h1>
+            <div class="stats-grid" id="statsUser"></div>
+        </div>
+        <div class="tab" id="tab-vagas"><h1 class="page-title">Minhas Vagas</h1><div id="userVagas"></div></div>
+        <div class="tab" id="tab-produtos"><h1 class="page-title">Meus Produtos</h1><div id="userProdutos"></div></div>
+        <div class="tab" id="tab-candidaturas"><h1 class="page-title">Minhas Candidaturas</h1><div id="userCandidaturas"></div></div>
+    </main>
+</div>
+
+<script>
+    const SUPABASE_URL = 'https://pzcycbmnnphywdzvymyr.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6Y3ljYm1ubnBoeXdkenZ5bXlyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNjczOTksImV4cCI6MjA5Mzk0MzM5OX0.f4jtslTFMnn0OhwiEhU7A_O6spowX6h4GEbHQ22hIEM';
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    let user = null;
+
+    async function init() {
+        const { data: { session } } = await db.auth.getSession();
+        if (!session) { window.location.href = 'login.html'; return; }
+        user = session.user;
+        carregarDashboard();
+        carregarVagas();
+        carregarProdutos();
+        carregarCandidaturas();
+    }
+    init();
+
+    function showTab(tab, el) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.getElementById('tab-' + tab).classList.add('active');
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        if (el) el.classList.add('active');
+    }
+
+    async function carregarDashboard() {
+        const [{ count: vagas }, { count: produtos }, { count: candidaturas }] = await Promise.all([
+            db.from('vagas').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
+            db.from('produtos').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
+            db.from('candidaturas').select('*', { count: 'exact', head: true }).eq('user_id', user.id)
+        ]);
+        document.getElementById('statsUser').innerHTML = `
+            <div class="stat-card"><div class="stat-valor">${vagas || 0}</div><div class="stat-label">Vagas publicadas</div></div>
+            <div class="stat-card"><div class="stat-valor">${produtos || 0}</div><div class="stat-label">Produtos anunciados</div></div>
+            <div class="stat-card"><div class="stat-valor">${candidaturas || 0}</div><div class="stat-label">Candidaturas enviadas</div></div>
+        `;
+    }
+
+    async function carregarVagas() {
+        const { data } = await db.from('vagas').select('*').eq('user_id', user.id).order('criado_em', { ascending: false });
+        const el = document.getElementById('userVagas');
+        if (!data || !data.length) {
+            el.innerHTML = '<div class="empty-state"><h3>Nenhuma vaga</h3><p>Publique sua primeira vaga.</p><a href="publicar-vaga.html" class="btn btn-primary">Publicar vaga</a></div>';
+            return;
+        }
+        el.innerHTML = data.map(v => `<div style="background:var(--cn-paper);border:1px solid var(--cn-line);border-radius:var(--cn-radius);padding:1rem;margin-bottom:1rem"><strong>${v.titulo}</strong> - ${v.empresa}<br><small>${v.cidade} | ${v.aprovada ? 'Aprovada' : 'Pendente'}</small></div>`).join('');
+    }
+
+    async function carregarProdutos() {
+        const { data } = await db.from('produtos').select('*').eq('user_id', user.id).order('criado_em', { ascending: false });
+        const el = document.getElementById('userProdutos');
+        if (!data || !data.length) {
+            el.innerHTML = '<div class="empty-state"><h3>Nenhum produto</h3><p>Anuncie no marketplace.</p></div>';
+            return;
+        }
+        el.innerHTML = data.map(p => `<div style="background:var(--cn-paper);border:1px solid var(--cn-line);border-radius:var(--cn-radius);padding:1rem;margin-bottom:1rem"><strong>${p.nome}</strong> - ${p.vendedor}<br><small>${p.preco || 'A combinar'} | ${p.aprovado ? 'Aprovado' : 'Pendente'}</small></div>`).join('');
+    }
+
+    async function carregarCandidaturas() {
+        const { data } = await db.from('candidaturas').select('*').eq('user_id', user.id).order('criado_em', { ascending: false });
+        const el = document.getElementById('userCandidaturas');
+        if (!data || !data.length) {
+            el.innerHTML = '<div class="empty-state"><h3>Nenhuma candidatura</h3><p>Candidate-se a vagas.</p></div>';
+            return;
+        }
+        el.innerHTML = data.map(c => `<div style="background:var(--cn-paper);border:1px solid var(--cn-line);border-radius:var(--cn-radius);padding:1rem;margin-bottom:1rem"><strong>${c.nome_candidato}</strong> para ${c.vaga_titulo || 'Vaga'}<br><small>Status: ${c.status}</small></div>`).join('');
+    }
+</script>
+</body>
+</html>

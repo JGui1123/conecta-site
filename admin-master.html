@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>👑 Admin Master — coNecta</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --cn-ink:#0A1628;--cn-ink-soft:#142136;--cn-primary:#1E5CFF;--cn-primary-d:#1748CC;
+  --cn-primary-l:#EAF1FF;--cn-accent:#FF7A45;--cn-accent-l:#FFF1EA;--cn-bone:#F7F5F0;
+  --cn-paper:#FFFFFF;--cn-line:#E6E2D9;--cn-mute:#6B7280;--cn-mute-2:#9CA3AF;
+  --cn-success:#10B981;--cn-warning:#F59E0B;--cn-danger:#EF4444;
+  --cn-font-display:'Sora',system-ui,sans-serif;--cn-font-body:'Inter',system-ui,sans-serif;
+  --cn-radius-sm:8px;--cn-radius:12px;--cn-radius-lg:18px;--cn-radius-pill:999px;
+  --cn-shadow:0 4px 16px rgba(10,22,40,.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--cn-font-body);background:var(--cn-bone);color:var(--cn-ink);min-height:100vh}
+.layout{display:grid;grid-template-columns:260px 1fr;min-height:100vh}
+.sidebar{background:linear-gradient(180deg,var(--cn-ink) 0%,var(--cn-ink-soft) 100%);color:#fff;padding:1.5rem 0;position:sticky;top:0;height:100vh;overflow-y:auto}
+.sb-brand{padding:0 1.5rem 1.5rem;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:1.25rem;display:flex;align-items:center;gap:8px}
+.sb-brand svg{width:32px;height:32px}
+.sb-logo{font-family:var(--cn-font-display);font-size:1.2rem;font-weight:700;color:#fff;letter-spacing:-.03em}
+.sb-logo span{color:var(--cn-primary)}
+.sb-badge{font-size:.6rem;font-weight:700;color:#FCD34D;letter-spacing:.1em;text-transform:uppercase;display:flex;align-items:center;gap:5px}
+.sb-section{padding:0 1rem;margin-bottom:1rem}
+.sb-section-title{font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.4);padding:0 .75rem;margin-bottom:.5rem}
+.nav-item{display:flex;align-items:center;gap:.7rem;padding:.6rem .75rem;color:rgba(255,255,255,.7);text-decoration:none;font-size:.85rem;border-radius:8px;cursor:pointer;transition:all .15s;border:none;background:none;width:100%;text-align:left;font-family:inherit}
+.nav-item:hover{background:rgba(255,255,255,.06);color:#fff}
+.nav-item.active{background:var(--cn-primary);color:#fff;font-weight:600}
+.nav-item .badge{margin-left:auto;background:var(--cn-danger);color:#fff;font-size:.65rem;font-weight:700;padding:2px 7px;border-radius:10px;min-width:18px;text-align:center}
+.sb-user{position:absolute;bottom:0;left:0;right:0;padding:1rem 1.5rem;border-top:1px solid rgba(255,255,255,.08);background:var(--cn-ink);display:flex;align-items:center;gap:.6rem}
+.sb-user-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--cn-primary),var(--cn-accent));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:.8rem;flex-shrink:0}
+.sb-user-name{font-size:.78rem;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-user-role{font-size:.65rem;color:#FCD34D}
+.sb-logout{background:none;border:none;color:rgba(255,255,255,.5);cursor:pointer;font-size:1rem;padding:.3rem;transition:color .2s}
+.sb-logout:hover{color:var(--cn-danger)}
+.main{padding:2rem 2.5rem;overflow-x:hidden}
+.main-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem;flex-wrap:wrap;gap:1rem}
+.page-title{font-family:var(--cn-font-display);font-size:1.75rem;font-weight:600;letter-spacing:-.03em;line-height:1.1;margin-bottom:.3rem}
+.page-sub{font-size:.875rem;color:var(--cn-mute)}
+.btn{display:inline-flex;align-items:center;gap:6px;font-family:var(--cn-font-body);font-size:.85rem;font-weight:600;padding:.6rem 1.1rem;border-radius:8px;border:none;cursor:pointer;text-decoration:none;transition:all .2s}
+.btn-primary{background:var(--cn-primary);color:#fff}.btn-primary:hover{background:var(--cn-primary-d)}
+.btn-success{background:var(--cn-success);color:#fff}.btn-success:hover{background:#059669}
+.btn-danger{background:var(--cn-danger);color:#fff}.btn-danger:hover{background:#DC2626}
+.btn-ghost{background:var(--cn-paper);color:var(--cn-mute);border:1px solid var(--cn-line)}.btn-ghost:hover{color:var(--cn-ink)}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:1.25rem;margin-bottom:2.5rem}
+.stat-card{background:var(--cn-paper);border:1px solid var(--cn-line);border-radius:var(--cn-radius);padding:1.5rem;transition:all .2s;position:relative;overflow:hidden}
+.stat-card:hover{box-shadow:var(--cn-shadow);transform:translateY(-2px)}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--cn-primary)}
+.stat-card.amber::before{background:var(--cn-warning)}.stat-card.green::before{background:var(--cn-success)}.stat-card.purple::before{background:#7C3AED}
+.stat-icon{width:40px;height:40px;border-radius:10px;background:var(--cn-primary-l);display:flex;align-items:center;justify-content:center;font-size:1.2rem;margin-bottom:.8rem}
+.stat-num{font-family:var(--cn-font-display);font-size:1.75rem;font-weight:700;letter-spacing:-.03em;line-height:1}
+.stat-label{font-size:.75rem;color:var(--cn-mute);margin-top:.35rem;font-weight:500}
+.section{display:none}.section.active{display:block}
+.section-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap;gap:1rem}
+.section-title{font-family:var(--cn-font-display);font-size:1.1rem;font-weight:700}
+.card{background:var(--cn-paper);border:1px solid var(--cn-line);border-radius:var(--cn-radius);overflow:hidden;margin-bottom:1rem}
+.card-pending{border-left:4px solid var(--cn-warning)}
+.card-row{display:grid;grid-template-columns:1fr auto;gap:1.5rem;align-items:center;padding:1.25rem 1.5rem}
+.card-info h4{font-family:var(--cn-font-display);font-size:1rem;font-weight:700;margin-bottom:.3rem}
+.card-info .meta{display:flex;gap:1rem;flex-wrap:wrap;font-size:.75rem;color:var(--cn-mute);margin-bottom:.5rem}
+.card-info .desc{font-size:.82rem;color:var(--cn-ink-soft);line-height:1.5}
+.card-actions{display:flex;gap:.5rem;flex-wrap:wrap;justify-content:flex-end}
+.status{font-size:.68rem;font-weight:700;padding:3px 9px;border-radius:20px;text-transform:uppercase;letter-spacing:.05em;display:inline-block}
+.status-pendente{background:#FEF3C7;color:#92400E}.status-aprovado{background:#D1FAE5;color:#065F46}.status-rejeitado{background:#FEE2E2;color:#991B1B}
+.form-card{background:var(--cn-paper);border:1px solid var(--cn-line);border-radius:var(--cn-radius);padding:2rem;margin-bottom:1.5rem;max-width:780px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+.form-row.full{grid-template-columns:1fr}
+.form-group label{display:block;font-size:.75rem;font-weight:700;margin-bottom:.35rem;color:var(--cn-ink)}
+.form-control{width:100%;padding:.6rem .8rem;border:1.5px solid var(--cn-line);border-radius:8px;font-family:var(--cn-font-body);font-size:.85rem;outline:none;transition:all .2s;background:var(--cn-paper)}
+.form-control:focus{border-color:var(--cn-primary);box-shadow:0 0 0 3px var(--cn-primary-l)}
+textarea.form-control{min-height:110px;resize:vertical}
+.form-actions{display:flex;gap:.75rem;justify-content:flex-end;margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--cn-line)}
+.table-wrap{background:var(--cn-paper);border:1px solid var(--cn-line);border-radius:var(--cn-radius);overflow:hidden;overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+thead{background:var(--cn-bone)}th{padding:.8rem 1rem;text-align:left;font-size:.7rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--cn-mute)}
+td{padding:.9rem 1rem;font-size:.82rem;border-bottom:1px solid var(--cn-line)}
+tr:hover{background:var(--cn-bone)}
+.empty{text-align:center;padding:3rem 1.5rem;background:var(--cn-paper);border:1px dashed var(--cn-line);border-radius:var(--cn-radius)}
+.empty h3{font-family:var(--cn-font-display);font-size:1rem;font-weight:700;margin-bottom:.4rem}
+.empty p{font-size:.82rem;color:var(--cn-mute)}
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--cn-ink);color:#fff;padding:.8rem 1.25rem;border-radius:10px;font-size:.82rem;font-weight:500;box-shadow:0 8px 32px rgba(10,22,40,.25);z-index:9999;transform:translateY(20px);opacity:0;transition:all .3s;display:flex;align-items:center;gap:8px}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.success{background:var(--cn-success)}.toast.error{background:var(--cn-danger)}
+.gate{position:fixed;inset:0;background:linear-gradient(135deg,var(--cn-ink),var(--cn-ink-soft));display:flex;align-items:center;justify-content:center;z-index:1000;padding:1rem}
+.gate-card{background:var(--cn-paper);border-radius:18px;padding:2.5rem;max-width:420px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(10,22,40,.3)}
+.gate-title{font-family:var(--cn-font-display);font-size:1.4rem;font-weight:700;margin-bottom:.4rem}
+.gate-sub{font-size:.88rem;color:var(--cn-mute);margin-bottom:2rem}
+.gate-error{background:#FEE2E2;color:#991B1B;padding:.7rem 1rem;border-radius:8px;font-size:.8rem;margin-bottom:1rem;display:none}
+.gate-error.show{display:block}
+@media(max-width:900px){.layout{grid-template-columns:1fr}.sidebar{position:relative;height:auto}.sb-user{position:relative}.form-row{grid-template-columns:1fr}.card-row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="gate" id="loginGate">
+  <div class="gate-card">
+    <div style="margin-bottom:1rem">
+      <svg width="48" height="48" viewBox="0 0 110 110" fill="none"><path d="M22 92V28L88 84V28" stroke="#0A1628" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><circle cx="88" cy="28" r="9" fill="#FF7A45"/><circle cx="22" cy="92" r="9" fill="#1E5CFF"/></svg>
+    </div>
+    <h2 class="gate-title">Admin Master</h2>
+    <p class="gate-sub">Acesso restrito ao administrador da plataforma coNecta</p>
+    <div class="gate-error" id="gateError"></div>
+    <form onsubmit="loginAdmin(event)" style="display:flex;flex-direction:column;gap:1rem">
+      <div style="text-align:left"><label style="font-size:.78rem;font-weight:600">E-mail</label><input class="form-control" type="email" id="loginEmail" required placeholder="seu@email.com"></div>
+      <div style="text-align:left"><label style="font-size:.78rem;font-weight:600">Senha</label><input class="form-control" type="password" id="loginPass" required placeholder="••••••••"></div>
+      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:.8rem">Entrar como Admin →</button>
+    </form>
+  </div>
+</div>
+
+<div class="layout" id="adminLayout" style="display:none">
+  <aside class="sidebar">
+    <div class="sb-brand">
+      <svg width="32" height="32" viewBox="0 0 110 110" fill="none"><path d="M22 92V28L88 84V28" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><circle cx="88" cy="28" r="9" fill="#FF7A45"/><circle cx="22" cy="92" r="9" fill="#1E5CFF"/></svg>
+      <div><span class="sb-logo">co<span>N</span>ecta</span><div class="sb-badge">👑 Admin Master</div></div>
+    </div>
+    <div class="sb-section"><div class="sb-section-title">Visão Geral</div><button class="nav-item active" onclick="showTab('dashboard')">📊 Dashboard</button></div>
+    <div class="sb-section"><div class="sb-section-title">Aprovações</div>
+      <button class="nav-item" onclick="showTab('vagas-pendentes')">💼 Vagas pendentes <span class="badge" id="badge-vagas-pendentes">0</span></button>
+      <button class="nav-item" onclick="showTab('produtos-pendentes')">🛒 Produtos pendentes <span class="badge" id="badge-produtos-pendentes">0</span></button>
+    </div>
+    <div class="sb-section"><div class="sb-section-title">Conteúdo</div>
+      <button class="nav-item" onclick="showTab('artigos')">📰 Artigos</button>
+      <button class="nav-item" onclick="showTab('parceiros')">🏢 Parceiros</button>
+      <button class="nav-item" onclick="showTab('cursos')">🎓 Cursos</button>
+      <button class="nav-item" onclick="showTab('vouchers')">🎫 Vouchers</button>
+    </div>
+    <div class="sb-section"><div class="sb-section-title">Gestão</div>
+      <button class="nav-item" onclick="showTab('todas-vagas')">📋 Vagas</button>
+      <button class="nav-item" onclick="showTab('todos-produtos')">📦 Produtos</button>
+      <button class="nav-item" onclick="showTab('candidaturas')">📝 Candidaturas</button>
+      <button class="nav-item" onclick="showTab('vendas')">💰 Vendas</button>
+      <button class="nav-item" onclick="showTab('usuarios')">👥 Usuários</button>
+    </div>
+    <div class="sb-user">
+      <div class="sb-user-av" id="userAv">A</div>
+      <div style="flex:1"><div class="sb-user-name" id="userName">Admin</div><div class="sb-user-role">👑 Master</div></div>
+      <button class="sb-logout" onclick="logout()" title="Sair">🚪</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <!-- DASHBOARD -->
+    <section class="section active" id="section-dashboard">
+      <div class="main-header"><div><h1 class="page-title">Dashboard</h1><p class="page-sub">Visão geral da plataforma</p></div><button class="btn btn-ghost" onclick="recarregarTudo()">🔄 Atualizar</button></div>
+      <div class="stats-grid" id="statsDashboard"></div>
+      <h3 style="font-family:var(--cn-font-display);font-weight:700;margin-bottom:1rem">⚡ Ações rápidas</h3>
+      <div class="stats-grid">
+        <button class="stat-card" style="cursor:pointer;text-align:left;border:none;font-family:inherit" onclick="showTab('artigos');setTimeout(()=>abrirFormArtigo(),100)"><div class="stat-icon">✏️</div><div style="font-weight:700">Publicar artigo</div><div class="stat-label">Seção Descubra</div></button>
+        <button class="stat-card amber" style="cursor:pointer;text-align:left;border:none;font-family:inherit" onclick="showTab('parceiros');setTimeout(()=>abrirFormParceiro(),100)"><div class="stat-icon">➕</div><div style="font-weight:700">Adicionar parceiro</div><div class="stat-label">Slideshow do hero</div></button>
+        <button class="stat-card green" style="cursor:pointer;text-align:left;border:none;font-family:inherit" onclick="showTab('cursos');setTimeout(()=>abrirFormCurso(),100)"><div class="stat-icon">🎓</div><div style="font-weight:700">Criar curso</div><div class="stat-label">Capacitação</div></button>
+      </div>
+    </section>
+
+    <!-- VAGAS PENDENTES -->
+    <section class="section" id="section-vagas-pendentes">
+      <div class="main-header"><div><h1 class="page-title">Vagas pendentes</h1><p class="page-sub">Aguardando sua aprovação</p></div></div>
+      <div id="lista-vagas-pendentes"></div>
+    </section>
+
+    <!-- PRODUTOS PENDENTES -->
+    <section class="section" id="section-produtos-pendentes">
+      <div class="main-header"><div><h1 class="page-title">Produtos pendentes</h1><p class="page-sub">Aguardando sua aprovação</p></div></div>
+      <div id="lista-produtos-pendentes"></div>
+    </section>
+
+    <!-- ARTIGOS -->
+    <section class="section" id="section-artigos">
+      <div class="main-header"><div><h1 class="page-title">📰 Artigos</h1></div><button class="btn btn-primary" onclick="abrirFormArtigo()">+ Novo artigo</button></div>
+      <div id="form-artigo-wrap" style="display:none"></div>
+      <div id="lista-artigos"></div>
+    </section>
+
+    <!-- PARCEIROS -->
+    <section class="section" id="section-parceiros">
+      <div class="main-header"><div><h1 class="page-title">🏢 Parceiros</h1></div><button class="btn btn-primary" onclick="abrirFormParceiro()">+ Novo parceiro</button></div>
+      <div id="form-parceiro-wrap" style="display:none"></div>
+      <div id="lista-parceiros"></div>
+    </section>
+
+    <!-- CURSOS -->
+    <section class="section" id="section-cursos">
+      <div class="main-header"><div><h1 class="page-title">🎓 Cursos</h1><p style="font-size:.8rem;color:var(--cn-mute)">Comissão: 10% sobre cursos pagos</p></div><button class="btn btn-primary" onclick="abrirFormCurso()">+ Novo curso</button></div>
+      <div id="form-curso-wrap" style="display:none"></div>
+      <div id="lista-cursos"></div>
+    </section>
+
+    <!-- VOUCHERS -->
+    <section class="section" id="section-vouchers">
+      <div class="main-header"><div><h1 class="page-title">🎫 Vouchers</h1></div><button class="btn btn-primary" onclick="abrirFormVoucher()">+ Novo voucher</button></div>
+      <div id="form-voucher-wrap" style="display:none"></div>
+      <div id="lista-vouchers"></div>
+    </section>
+
+    <!-- TODAS AS VAGAS -->
+    <section class="section" id="section-todas-vagas">
+      <div class="main-header"><h1 class="page-title">📋 Todas as vagas</h1></div>
+      <div id="lista-todas-vagas"></div>
+    </section>
+
+    <!-- TODOS OS PRODUTOS -->
+    <section class="section" id="section-todos-produtos">
+      <div class="main-header"><h1 class="page-title">📦 Todos os produtos</h1></div>
+      <div id="lista-todos-produtos"></div>
+    </section>
+
+    <!-- CANDIDATURAS -->
+    <section class="section" id="section-candidaturas">
+      <div class="main-header"><h1 class="page-title">📝 Candidaturas</h1></div>
+      <div id="lista-candidaturas"></div>
+    </section>
+
+    <!-- VENDAS -->
+    <section class="section" id="section-vendas">
+      <div class="main-header"><div><h1 class="page-title">💰 Vendas e Comissões</h1></div><button class="btn btn-primary" onclick="abrirFormVenda()">+ Registrar venda</button></div>
+      <div id="form-venda-wrap" style="display:none"></div>
+      <div id="lista-vendas"></div>
+    </section>
+
+    <!-- USUÁRIOS -->
+    <section class="section" id="section-usuarios">
+      <div class="main-header"><h1 class="page-title">👥 Usuários</h1></div>
+      <div id="lista-usuarios"></div>
+    </section>
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══ SUPABASE ═══
+const SUPABASE_URL='https://pzcycbmnnphywdzvymyr.supabase.co';
+const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6Y3ljYm1ubnBoeXdkenZ5bXlyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNjczOTksImV4cCI6MjA5Mzk0MzM5OX0.f4jtslTFMnn0OhwiEhU7A_O6spowX6h4GEbHQ22hIEM';
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let currentUser=null;
+
+// ═══ AUTENTICAÇÃO ═══
+async function checarAuth(){
+  const{data:{session}}=await db.auth.getSession();
+  if(!session){showGate();return false;}
+  const{data:admin}=await db.from('admins').select('*').eq('id',session.user.id).single();
+  if(!admin){await db.auth.signOut();showGate();return false;}
+  currentUser=session.user;
+  document.getElementById('loginGate').style.display='none';
+  document.getElementById('adminLayout').style.display='grid';
+  document.getElementById('userName').textContent=admin.nome||'Admin';
+  document.getElementById('userAv').textContent=(admin.nome||'A')[0].toUpperCase();
+  carregarDashboard();
+  atualizarBadges();
+  return true;
+}
+function showGate(){document.getElementById('loginGate').style.display='flex';document.getElementById('adminLayout').style.display='none';}
+async function loginAdmin(e){
+  e.preventDefault();
+  const email=document.getElementById('loginEmail').value,pass=document.getElementById('loginPass').value;
+  const{error}=await db.auth.signInWithPassword({email,password:pass});
+  if(error){document.getElementById('gateError').textContent='❌ '+(error.message==='Invalid login credentials'?'E-mail ou senha incorretos':error.message);document.getElementById('gateError').classList.add('show');return;}
+  await checarAuth();
+}
+async function logout(){await db.auth.signOut();location.reload();}
+
+function showToast(msg,tipo=''){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show '+tipo;setTimeout(()=>t.classList.remove('show'),3000);}
+
+// ═══ NAVEGAÇÃO ═══
+function showTab(tabId){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('section-'+tabId).classList.add('active');
+  event?.currentTarget?.classList.add('active');
+  const loaders={
+    dashboard:carregarDashboard,'vagas-pendentes':carregarVagasPendentes,'produtos-pendentes':carregarProdutosPendentes,
+    artigos:carregarArtigos,parceiros:carregarParceiros,cursos:carregarCursos,vouchers:carregarVouchers,
+    'todas-vagas':carregarTodasVagas,'todos-produtos':carregarTodosProdutos,candidaturas:carregarCandidaturas,
+    vendas:carregarVendas,usuarios:carregarUsuarios
+  };
+  if(loaders[tabId])loaders[tabId]();
+}
+
+async function atualizarBadges(){
+  const{count:vp}=await db.from('vagas').select('*',{count:'exact',head:true}).eq('aprovada',false).eq('ativa',true);
+  const{count:pp}=await db.from('produtos').select('*',{count:'exact',head:true}).eq('aprovado',false).eq('ativo',true);
+  document.getElementById('badge-vagas-pendentes').textContent=vp||0;
+  document.getElementById('badge-produtos-pendentes').textContent=pp||0;
+}
+
+// ═══ DASHBOARD ═══
+async function carregarDashboard(){
+  const[{count:va},{count:vp},{count:pa},{count:us},{count:ca}]=await Promise.all([
+    db.from('vagas').select('*',{count:'exact',head:true}).eq('aprovada',true).eq('ativa',true),
+    db.from('vagas').select('*',{count:'exact',head:true}).eq('aprovada',false).eq('ativa',true),
+    db.from('produtos').select('*',{count:'exact',head:true}).eq('aprovado',true).eq('ativo',true),
+    db.from('perfis').select('*',{count:'exact',head:true}),
+    db.from('candidaturas').select('*',{count:'exact',head:true})
+  ]);
+  const inicioMes=new Date();inicioMes.setDate(1);inicioMes.setHours(0,0,0,0);
+  const{data:vendas}=await db.from('vendas').select('comissao_admin').eq('status','pago').gte('criado_em',inicioMes.toISOString());
+  const comissao=(vendas||[]).reduce((s,v)=>s+parseFloat(v.comissao_admin||0),0);
+  document.getElementById('statsDashboard').innerHTML=`
+    <div class="stat-card"><div class="stat-icon">💼</div><div class="stat-num">${va||0}</div><div class="stat-label">Vagas ativas</div></div>
+    <div class="stat-card amber"><div class="stat-icon">⏳</div><div class="stat-num">${vp||0}</div><div class="stat-label">Vagas pendentes</div></div>
+    <div class="stat-card green"><div class="stat-icon">🛒</div><div class="stat-num">${pa||0}</div><div class="stat-label">Produtos ativos</div></div>
+    <div class="stat-card purple"><div class="stat-icon">👥</div><div class="stat-num">${us||0}</div><div class="stat-label">Usuários</div></div>
+    <div class="stat-card"><div class="stat-icon">📝</div><div class="stat-num">${ca||0}</div><div class="stat-label">Candidaturas</div></div>
+    <div class="stat-card green"><div class="stat-icon">💰</div><div class="stat-num">R$ ${comissao.toFixed(2).replace('.',',')}</div><div class="stat-label">Sua comissão (mês)</div></div>
+  `;
+  await atualizarBadges();
+}
+
+// ═══ VAGAS PENDENTES ═══
+async function carregarVagasPendentes(){
+  const{data}=await db.from('vagas').select('*').eq('aprovada',false).eq('ativa',true).order('criado_em',{ascending:false});
+  const lista=document.getElementById('lista-vagas-pendentes');
+  if(!data?.length){lista.innerHTML='<div class="empty"><h3>Tudo em dia!</h3><p>Não há vagas aguardando.</p></div>';return;}
+  lista.innerHTML=data.map(v=>`<div class="card card-pending"><div class="card-row"><div class="card-info"><span class="status status-pendente">⏳ Pendente</span><span style="font-size:.72rem;color:var(--cn-mute);margin-left:.5rem">${new Date(v.criado_em).toLocaleString('pt-BR')}</span><h4>${v.titulo}</h4><div class="meta"><span>🏢 ${v.empresa}</span><span>📍 ${v.cidade}</span><span>📂 ${v.area}</span><span>💰 ${v.salario||'A combinar'}</span></div><div class="desc">${v.descricao||''}</div></div><div class="card-actions"><button class="btn btn-success btn-sm" onclick="aprovarVaga(${v.id})">✓ Aprovar</button><button class="btn btn-danger btn-sm" onclick="rejeitarVaga(${v.id})">✕ Rejeitar</button></div></div></div>`).join('');
+}
+async function aprovarVaga(id){await db.from('vagas').update({aprovada:true}).eq('id',id);showToast('✅ Vaga aprovada!','success');carregarVagasPendentes();carregarDashboard();}
+async function rejeitarVaga(id){if(!confirm('Rejeitar?'))return;await db.from('vagas').update({ativa:false}).eq('id',id);showToast('Vaga rejeitada','success');carregarVagasPendentes();carregarDashboard();}
+
+// ═══ PRODUTOS PENDENTES ═══
+async function carregarProdutosPendentes(){
+  const{data}=await db.from('produtos').select('*').eq('aprovado',false).eq('ativo',true).order('criado_em',{ascending:false});
+  const lista=document.getElementById('lista-produtos-pendentes');
+  if(!data?.length){lista.innerHTML='<div class="empty"><h3>Tudo em dia!</h3><p>Não há produtos aguardando.</p></div>';return;}
+  lista.innerHTML=data.map(p=>`<div class="card card-pending"><div class="card-row"><div class="card-info"><span class="status status-pendente">⏳ Pendente</span><h4>${p.nome}</h4><div class="meta"><span>👤 ${p.vendedor}</span><span>📂 ${p.categoria}</span><span>💰 ${p.preco||'A combinar'}</span></div><div class="desc">${p.descricao||''}</div></div><div class="card-actions"><button class="btn btn-success btn-sm" onclick="aprovarProduto(${p.id})">✓ Aprovar</button><button class="btn btn-danger btn-sm" onclick="rejeitarProduto(${p.id})">✕ Rejeitar</button></div></div></div>`).join('');
+}
+async function aprovarProduto(id){await db.from('produtos').update({aprovado:true}).eq('id',id);showToast('✅ Aprovado!','success');carregarProdutosPendentes();carregarDashboard();}
+async function rejeitarProduto(id){if(!confirm('Rejeitar?'))return;await db.from('produtos').update({ativo:false}).eq('id',id);showToast('Rejeitado','success');carregarProdutosPendentes();carregarDashboard();}
+
+// ═══ ARTIGOS ═══
+async function carregarArtigos(){
+  const{data}=await db.from('artigos').select('*').order('criado_em',{ascending:false});
+  const lista=document.getElementById('lista-artigos');
+  if(!data?.length){lista.innerHTML='<div class="empty"><h3>Nenhum artigo</h3><p>Clique em "+ Novo artigo".</p></div>';return;}
+  lista.innerHTML=data.map(a=>`<div class="card"><div class="card-row"><div class="card-info"><span class="status ${a.publicado?'status-aprovado':'status-pendente'}">${a.publicado?'✓ Publicado':'⏸ Rascunho'}</span><span style="font-size:.7rem;color:var(--cn-primary);margin-left:.5rem;font-weight:600">${a.tipo}</span><h4>${a.titulo}</h4><div class="desc">${a.descricao||''}</div></div><div class="card-actions"><button class="btn btn-ghost btn-sm" onclick="editarArtigo(${a.id})">✏️</button><button class="btn btn-danger btn-sm" onclick="excluirArtigo(${a.id})">🗑️</button></div></div></div>`).join('');
+}
+function abrirFormArtigo(artigo=null){
+  const wrap=document.getElementById('form-artigo-wrap');wrap.style.display='block';
+  wrap.innerHTML=`<div class="form-card"><h3 style="font-family:var(--cn-font-display);font-weight:700;margin-bottom:1rem">${artigo?'Editar artigo':'Novo artigo'}</h3><form onsubmit="salvarArtigo(event,${artigo?.id||'null'})"><div class="form-row full"><div class="form-group"><label>Título *</label><input class="form-control" id="art-titulo" required value="${artigo?.titulo||''}"></div></div><div class="form-row"><div class="form-group"><label>Categoria *</label><input class="form-control" id="art-categoria" required value="${artigo?.categoria||''}"></div><div class="form-group"><label>Tipo *</label><select class="form-control" id="art-tipo" required><option value="artigo" ${artigo?.tipo==='artigo'?'selected':''}>📄 Artigo</option><option value="video" ${artigo?.tipo==='video'?'selected':''}>▶️ Vídeo</option><option value="mapa" ${artigo?.tipo==='mapa'?'selected':''}>🗺️ Mapa</option><option value="externo" ${artigo?.tipo==='externo'?'selected':''}>🔗 Link externo</option></select></div></div><div class="form-row full"><div class="form-group"><label>Descrição curta * (máx 200 caracteres)</label><input class="form-control" id="art-descricao" required maxlength="200" value="${artigo?.descricao||''}"></div></div><div class="form-row full"><div class="form-group"><label>URL da imagem de capa</label><input class="form-control" id="art-imagem" placeholder="https://images.unsplash.com/..." value="${artigo?.imagem_url||''}"></div></div><div class="form-row full"><div class="form-group"><label>Conteúdo completo (HTML permitido)</label><textarea class="form-control" id="art-conteudo">${artigo?.conteudo||''}</textarea></div></div><div class="form-row full"><div class="form-group"><label>URL do áudio (opcional)</label><input class="form-control" id="art-audio" placeholder="https://...mp3" value="${artigo?.audio_url||''}"></div></div><div class="form-row"><div class="form-group"><label>Badge</label><input class="form-control" id="art-badge" value="${artigo?.badge||''}"></div><div class="form-group"><label>Tempo de leitura</label><input class="form-control" id="art-leitura" value="${artigo?.tempo_leitura||''}"></div></div><div class="form-row full"><label><input type="checkbox" id="art-publicado" ${artigo?.publicado!==false?'checked':''}> Publicado</label></div><div class="form-actions"><button type="button" class="btn btn-ghost" onclick="document.getElementById('form-artigo-wrap').style.display='none'">Cancelar</button><button type="submit" class="btn btn-primary">${artigo?'Salvar':'Publicar'}</button></div></form></div>`;
+  wrap.scrollIntoView({behavior:'smooth'});
+}
+async function salvarArtigo(e,id){
+  e.preventDefault();
+  const dados={titulo:document.getElementById('art-titulo').value,categoria:document.getElementById('art-categoria').value,tipo:document.getElementById('art-tipo').value,descricao:document.getElementById('art-descricao').value,conteudo:document.getElementById('art-conteudo').value,imagem_url:document.getElementById('art-imagem').value||null,audio_url:document.getElementById('art-audio').value||null,badge:document.getElementById('art-badge').value||null,tempo_leitura:document.getElementById('art-leitura').value||null,publicado:document.getElementById('art-publicado').checked};
+  const res=id?await db.from('artigos').update(dados).eq('id',id):await db.from('artigos').insert([dados]);
+  if(res.error)return showToast('❌ '+res.error.message,'error');
+  showToast(id?'✅ Artigo atualizado!':'✅ Artigo publicado!','success');
+  document.getElementById('form-artigo-wrap').style.display='none';carregarArtigos();
+}
+async function editarArtigo(id){const{data}=await db.from('artigos').select('*').eq('id',id).single();if(data)abrirFormArtigo(data);}
+async function excluirArtigo(id){if(!confirm('Excluir?'))return;await db.from('artigos').delete().eq('id',id);showToast('🗑️ Excluído','success');carregarArtigos();}
+
+// ═══ PARCEIROS ═══
+async function carregarParceiros(){
+  const{data}=await db.from('parceiros').select('*').order('ordem');
+  const lista=document.getElementById('lista-parceiros');
+  if(!data?.length){lista.innerHTML='<div class="empty"><h3>Nenhum parceiro</h3><p>Adicione para o slideshow.</p></div>';return;}
+  lista.innerHTML=data.map(p=>`<div class="card"><div class="card-row"><div class="card-info"><span class="status ${p.ativo?'status-aprovado':'status-pendente'}">${p.ativo?'✓ Ativo':'⏸ Inativo'}</span><h4>${p.nome}</h4><div class="meta"><span>📂 ${p.ramo}</span>${p.cidade?`<span>📍 ${p.cidade}</span>`:''}</div><div class="desc">${p.descricao||''}</div></div><div class="card-actions"><button class="btn btn-ghost btn-sm" onclick="editarParceiro(${p.id})">✏️</button><button class="btn btn-danger btn-sm" onclick="excluirParceiro(${p.id})">🗑️</button></div></div></div>`).join('');
+}
+function abrirFormParceiro(parceiro=null){
+  const wrap=document.getElementById('form-parceiro-wrap');wrap.style.display='block';
+  wrap.innerHTML=`<div class="form-card"><h3 style="font-family:var(--cn-font-display);font-weight:700;margin-bottom:1rem">${parceiro?'Editar':'Novo'} parceiro</h3><form onsubmit="salvarParceiro(event,${parceiro?.id||'null'})"><div class="form-row"><div class="form-group"><label>Nome *</label><input class="form-control" id="par-nome" required value="${parceiro?.nome||''}"></div><div class="form-group"><label>Ramo *</label><input class="form-control" id="par-ramo" required value="${parceiro?.ramo||''}"></div></div><div class="form-row full"><div class="form-group"><label>Descrição *</label><textarea class="form-control" id="par-desc" required>${parceiro?.descricao||''}</textarea></div></div><div class="form-row"><div class="form-group"><label>Cidade</label><input class="form-control" id="par-cidade" value="${parceiro?.cidade||''}"></div><div class="form-group"><label>WhatsApp</label><input class="form-control" id="par-wpp" value="${parceiro?.whatsapp||''}"></div></div><div class="form-row"><div class="form-group"><label>URL da imagem do banner</label><input class="form-control" id="par-banner" placeholder="https://images.unsplash.com/..." value="${parceiro?.imagem_banner_url||''}"></div><div class="form-group"><label>Ordem</label><input class="form-control" type="number" id="par-ordem" value="${parceiro?.ordem??0}"></div></div><div class="form-row full"><label><input type="checkbox" id="par-ativo" ${parceiro?.ativo!==false?'checked':''}> Ativo</label></div><div class="form-actions"><button type="button" class="btn btn-ghost" onclick="document.getElementById('form-parceiro-wrap').style.display='none'">Cancelar</button><button type="submit" class="btn btn-primary">${parceiro?'Salvar':'Adicionar'}</button></div></form></div>`;
+  wrap.scrollIntoView({behavior:'smooth'});
+}
+async function salvarParceiro(e,id){
+  e.preventDefault();
+  const dados={nome:document.getElementById('par-nome').value,ramo:document.getElementById('par-ramo').value,descricao:document.getElementById('par-desc').value,cidade:document.getElementById('par-cidade').value||null,whatsapp:document.getElementById('par-wpp').value||null,imagem_banner_url:document.getElementById('par-banner').value||null,ordem:parseInt(document.getElementById('par-ordem').value)||0,ativo:document.getElementById('par-ativo').checked};
+  const res=id?await db.from('parceiros').update(dados).eq('id',id):await db.from('parceiros').insert([dados]);
+  if(res.error)return showToast('❌ '+res.error.message,'error');
+  showToast(id?'✅ Parceiro atualizado!':'✅ Parceiro adicionado!','success');
+  document.getElementById('form-parceiro-wrap').style.display='none';carregarParceiros();
+}
+async function editarParceiro(id){const{data}=await db.from('parceiros').select('*').eq('id',id).single();if(data)abrirFormParceiro(data);}
+async function excluirParceiro(id){if(!confirm('Excluir?'))return;await db.from('parceiros').delete().eq('id',id);showToast('🗑️ Removido','success');carregarParceiros();}
+
+// ═══ CURSOS ═══
+async function carregarCursos(){
+  const{data}=await db.from('cursos').select('*').order('criado_em',{ascending:false});
+  const lista=document.getElementById('lista-cursos');
+  if(!data?.length){lista.innerHTML='<div class="empty"><h3>Nenhum curso</h3><p>Adicione cursos.</p></div>';return;}
+  lista.innerHTML=data.map(c=>`<div class="card"><div class="card-row"><div class="card-info"><span class="status ${c.ativo?'status-ativo':'status-pendente'}">${c.ativo?'✓ Ativo':'⏸ Inativo'}</span><span class="status ${c.gratis?'status-aprovado':'status-pendente'}" style="margin-left:.5rem">${c.gratis?'GRÁTIS':'PAGO'}</span><h4>${c.nome}</h4><div class="meta"><span>📂 ${c.categoria}</span><span>⏱ ${c.duracao||'-'}</span><span>💰 ${c.gratis?'Gratuito':'R$ '+(c.preco||0).toFixed(2)}</span>${!c.gratis?`<span style="color:var(--cn-success)">Comissão: R$ ${((c.preco||0)*0.10).toFixed(2)}</span>`:''}</div><div class="desc">${c.descricao||''}</div></div><div class="card-actions"><button class="btn btn-ghost btn-sm" onclick="editarCurso(${c.id})">✏️</button><button class="btn btn-danger btn-sm" onclick="excluirCurso(${c.id})">🗑️</button></div></div></div>`).join('');
+}
+function abrirFormCurso(curso=null){
+  const wrap=document.getElementById('form-curso-wrap');wrap.style.display='block';
+  wrap.innerHTML=`<div class="form-card"><h3 style="font-family:var(--cn-font-display);font-weight:700;margin-bottom:1rem">${curso?'Editar':'Novo'} curso</h3><form onsubmit="salvarCurso(event,${curso?.id||'null'})"><div class="form-row full"><div class="form-group"><label>Nome *</label><input class="form-control" id="cur-nome" required value="${curso?.nome||''}"></div></div><div class="form-row"><div class="form-group"><label>Categoria *</label><input class="form-control" id="cur-cat" required value="${curso?.categoria||''}"></div><div class="form-group"><label>Duração</label><input class="form-control" id="cur-dur" value="${curso?.duracao||''}"></div></div><div class="form-row"><div class="form-group"><label>Nível</label><select class="form-control" id="cur-niv"><option value="Iniciante" ${curso?.nivel==='Iniciante'?'selected':''}>Iniciante</option><option value="Intermediário" ${curso?.nivel==='Intermediário'?'selected':''}>Intermediário</option><option value="Avançado" ${curso?.nivel==='Avançado'?'selected':''}>Avançado</option></select></div><div class="form-group"><label>Preço (R$)</label><input class="form-control" type="number" step="0.01" id="cur-preco" value="${curso?.preco||0}"></div></div><div class="form-row full"><div class="form-group"><label>Descrição *</label><textarea class="form-control" id="cur-desc" required>${curso?.descricao||''}</textarea></div></div><div class="form-row full"><div class="form-group"><label>URLs das imagens (até 3, uma por linha)</label><textarea class="form-control" id="cur-imagens" placeholder="https://images.unsplash.com/...">${(curso?.imagens||[]).join('\n')}</textarea></div></div><div class="form-row"><label><input type="checkbox" id="cur-gratis" ${curso?.gratis!==false?'checked':''}> Gratuito</label><label><input type="checkbox" id="cur-ativo" ${curso?.ativo!==false?'checked':''}> Ativo</label></div><div class="form-actions"><button type="button" class="btn btn-ghost" onclick="document.getElementById('form-curso-wrap').style.display='none'">Cancelar</button><button type="submit" class="btn btn-primary">${curso?'Salvar':'Adicionar'}</button></div></form></div>`;
+  wrap.scrollIntoView({behavior:'smooth'});
+}
+async function salvarCurso(e,id){
+  e.preventDefault();
+  const imgs=document.getElementById('cur-imagens').value.trim().split('\n').filter(u=>u.trim()).slice(0,3);
+  const dados={nome:document.getElementById('cur-nome').value,categoria:document.getElementById('cur-cat').value,duracao:document.getElementById('cur-dur').value||null,nivel:document.getElementById('cur-niv').value,preco:parseFloat(document.getElementById('cur-preco').value)||0,descricao:document.getElementById('cur-desc').value,imagens:imgs,gratis:document.getElementById('cur-gratis').checked,ativo:document.getElementById('cur-ativo').checked};
+  const res=id?await db.from('cursos').update(dados).eq('id',id):await db.from('cursos').insert([dados]);
+  if(res.error)return showToast('❌ '+res.error.message,'error');
+  showToast(id?'✅ Curso atualizado!':'✅ Curso adicionado!','success');
+  document.getElementById('form-curso-wrap').style.display='none';carregarCursos();
+}
+async function editarCurso(id){const{data}=await db.from('cursos').select('*').eq('id',id).single();if(data)abrirFormCurso(data);}
+async function excluirCurso(id){if(!confirm('Excluir?'))return;await db.from('cursos').delete().eq('id',id);showToast('🗑️ Removido','success');carregarCursos();}
+
+// ═══ VOUCHERS ═══
+async function carregarVouchers(){
+  const{data}=await db.from('vouchers').select('*').order('criado_em',{ascending:false});
+  const lista=document.getElementById('lista-vouchers');
+  if(!data?.length){lista.innerHTML='<div class="empty"><h3>Nenhum voucher</h3><p>Adicione cupons.</p></div>';return;}
+  lista.innerHTML=data.map(v=>`<div class="card"><div class="card-row"><div class="card-info"><span class="status ${v.ativo?'status-ativo':'status-pendente'}">${v.ativo?'✓ Ativo':'⏸ Inativo'}</span><code style="background:var(--cn-bone);padding:2px 8px;border-radius:6px;margin-left:.5rem">${v.codigo}</code><h4>${v.desconto} - ${v.parceiro_nome}</h4><div class="meta"><span>${v.tipo}</span>${v.validade?`<span>📅 ${new Date(v.validade).toLocaleDateString('pt-BR')}</span>`:''}</div></div><div class="card-actions"><button class="btn btn-danger btn-sm" onclick="excluirVoucher(${v.id})">🗑️</button></div></div></div>`).join('');
+}
+function abrirFormVoucher(){
+  const wrap=document.getElementById('form-voucher-wrap');wrap.style.display='block';
+  wrap.innerHTML=`<div class="form-card"><h3 style="font-family:var(--cn-font-display);font-weight:700;margin-bottom:1rem">Novo voucher</h3><form onsubmit="salvarVoucher(event)"><div class="form-row"><div class="form-group"><label>Parceiro *</label><input class="form-control" id="vou-parc" required></div><div class="form-group"><label>Código *</label><input class="form-control" id="vou-cod" required placeholder="CONECTA20" style="text-transform:uppercase"></div></div><div class="form-row"><div class="form-group"><label>Desconto *</label><input class="form-control" id="vou-desc" required placeholder="10%, R$ 5"></div><div class="form-group"><label>Tipo</label><select class="form-control" id="vou-tipo"><option>Desconto</option><option>Cashback</option><option>Brinde</option></select></div></div><div class="form-row"><div class="form-group"><label>Categoria</label><input class="form-control" id="vou-cat"></div><div class="form-group"><label>Validade</label><input class="form-control" type="date" id="vou-val"></div></div><div class="form-actions"><button type="button" class="btn btn-ghost" onclick="document.getElementById('form-voucher-wrap').style.display='none'">Cancelar</button><button type="submit" class="btn btn-primary">Adicionar</button></div></form></div>`;
+  wrap.scrollIntoView({behavior:'smooth'});
+}
+async function salvarVoucher(e){
+  e.preventDefault();
+  const{error}=await db.from('vouchers').insert([{parceiro_nome:document.getElementById('vou-parc').value,codigo:document.getElementById('vou-cod').value.toUpperCase(),desconto:document.getElementById('vou-desc').value,tipo:document.getElementById('vou-tipo').value,categoria:document.getElementById('vou-cat').value||null,validade:document.getElementById('vou-val').value||null,ativo:true}]);
+  if(error)return showToast('❌ '+error.message,'error');
+  showToast('✅ Voucher criado!','success');document.getElementById('form-voucher-wrap').style.display='none';carregarVouchers();
+}
+async function excluirVoucher(id){if(!confirm('Excluir?'))return;await db.from('vouchers').delete().eq('id',id);showToast('🗑️ Removido','success');carregarVouchers();}
+
+// ═══ VENDAS ═══
+async function carregarVendas(){
+  const{data}=await db.from('vendas').select('*').order('criado_em',{ascending:false});
+  const lista=document.getElementById('lista-vendas');
+  const comissao=(data||[]).filter(v=>v.status==='pago').reduce((s,v)=>s+parseFloat(v.comissao_admin||0),0);
+  let html=`<div style="background:linear-gradient(135deg,var(--cn-success),#059669);color:#fff;padding:1.5rem;border-radius:12px;margin-bottom:1.5rem"><div style="font-size:.75rem;opacity:.85">Comissões pagas</div><div style="font-family:var(--cn-font-display);font-size:1.75rem;font-weight:700">R$ ${comissao.toFixed(2).replace('.',',')}</div></div>`;
+  if(!data?.length){html+='<div class="empty"><h3>Nenhuma venda</h3><p>Use "Registrar venda".</p></div>';}
+  else html+=`<div class="table-wrap"><table><thead><tr><th>Tipo</th><th>Item</th><th>Comprador</th><th>Valor</th><th>Comissão</th><th>Status</th></tr></thead><tbody>${data.map(v=>`<tr><td>${v.tipo}</td><td>${v.item_nome}</td><td>${v.comprador_nome}</td><td>R$ ${parseFloat(v.valor_total).toFixed(2)}</td><td style="color:var(--cn-success)">R$ ${parseFloat(v.comissao_admin||0).toFixed(2)}</td><td><span class="status status-${v.status==='pago'?'aprovado':v.status==='cancelado'?'rejeitado':'pendente'}">${v.status}</span></td></tr>`).join('')}</tbody></table></div>`;
+  lista.innerHTML=html;
+}
+function abrirFormVenda(){
+  const wrap=document.getElementById('form-venda-wrap');wrap.style.display='block';
+  wrap.innerHTML=`<div class="form-card"><h3 style="font-family:var(--cn-font-display);font-weight:700;margin-bottom:1rem">Registrar venda</h3><form onsubmit="salvarVenda(event)"><div class="form-row"><div class="form-group"><label>Tipo *</label><select class="form-control" id="ven-tipo" required onchange="atualizarComissao()"><option value="curso">🎓 Curso (10%)</option><option value="produto">📦 Produto</option><option value="servico">🔧 Serviço</option></select></div><div class="form-group"><label>Item *</label><input class="form-control" id="ven-item" required></div></div><div class="form-row"><div class="form-group"><label>Comprador *</label><input class="form-control" id="ven-comp" required></div><div class="form-group"><label>WhatsApp</label><input class="form-control" id="ven-wpp"></div></div><div class="form-row"><div class="form-group"><label>Valor (R$) *</label><input class="form-control" type="number" step="0.01" id="ven-valor" required oninput="atualizarComissao()"></div><div class="form-group"><label>Comissão (R$)</label><input class="form-control" id="ven-com" readonly style="background:var(--cn-bone);font-weight:700;color:var(--cn-success)"></div></div><div class="form-row"><div class="form-group"><label>Status</label><select class="form-control" id="ven-status"><option value="pago">Pago</option><option value="pendente">Pendente</option></select></div><div class="form-group"><label>Método</label><input class="form-control" id="ven-met" placeholder="Pix, Cartão..."></div></div><div class="form-actions"><button type="button" class="btn btn-ghost" onclick="document.getElementById('form-venda-wrap').style.display='none'">Cancelar</button><button type="submit" class="btn btn-primary">Registrar</button></div></form></div>`;
+  atualizarComissao();wrap.scrollIntoView({behavior:'smooth'});
+}
+function atualizarComissao(){const v=parseFloat(document.getElementById('ven-valor').value)||0;document.getElementById('ven-com').value=(v*(document.getElementById('ven-tipo').value==='curso'?.10:0)).toFixed(2);}
+async function salvarVenda(e){
+  e.preventDefault();const valor=parseFloat(document.getElementById('ven-valor').value);const tipo=document.getElementById('ven-tipo').value;const comissao=valor*(tipo==='curso'?.10:0);
+  const{error}=await db.from('vendas').insert([{tipo,item_nome:document.getElementById('ven-item').value,comprador_nome:document.getElementById('ven-comp').value,comprador_whatsapp:document.getElementById('ven-wpp').value||null,valor_total:valor,comissao_admin:comissao,valor_vendedor:valor-comissao,status:document.getElementById('ven-status').value,metodo_pagamento:document.getElementById('ven-met').value||null}]);
+  if(error)return showToast('❌ '+error.message,'error');
+  showToast(`✅ Venda registrada! Comissão: R$ ${comissao.toFixed(2)}`,'success');
+  document.getElementById('form-venda-wrap').style.display='none';carregarVendas();carregarDashboard();
+}
+
+// ═══ LISTAGENS GENÉRICAS ═══
+async function carregarTodasVagas(){
+  const{data}=await db.from('vagas').select('*').order('criado_em',{ascending:false});
+  const lista=document.getElementById('lista-todas-vagas');
+  if(!data?.length){lista.innerHTML='<div class="empty"><h3>Nenhuma vaga</h3></div>';return;}
+  lista.innerHTML=`<div class="table-wrap"><table><thead><tr><th>Cargo</th><th>Empresa</th><th>Cidade</th><th>Status</th><th>Ações</th></tr></thead><tbody>${data.map(v=>`<tr><td><strong>${v.titulo}</strong></td><td>${v.empresa}</td><td>${v.cidade}</td><td>${v.aprovada?(v.ativa?'<span class="status status-aprovado">Ativa</span>':'<span class="status status-pendente">Inativa</span>'):'<span class="status status-pendente">Pendente</span>'}</td><td><button class="btn btn-ghost btn-sm" onclick="toggleVaga(${v.id},${v.ativa})" style="font-size:.7rem">${v.ativa?'Desativar':'Ativar'}</button> <button class="btn btn-danger btn-sm" onclick="excluirVaga(${v.id})" style="font-size:.7rem">🗑️</button></td></tr>`).join('')}</tbody></table></div>`;
+}
+async function toggleVaga(id,atual){await db.from('vagas').update({ativa:!atual}).eq('id',id);showToast('✅ Status atualizado','success');carregarTodasVagas();carregarDashboard();}
+async function excluirVaga(id){if(!confirm('Excluir permanentemente?'))return;await db.from('vagas').delete().eq('id',id);showToast('🗑️ Vaga excluída','success');carregarTodasVagas();carregarDashboard();}
+
+async function carregarTodosProdutos(){
+  const{data}=await db.from('produtos').select('*').order('criado_em',{ascending:false});
+  const lista=document.getElementById('lista-todos-produtos');
+  if(!data?.length){lista.innerHTML='<div class="empty"><h3>Nenhum produto</h3></div>';return;}
+  lista.innerHTML=`<div class="table-wrap"><table><thead><tr><th>Produto</th><th>Vendedor</th><th>Preço</th><th>Status</th><th>Ações</th></tr></thead><tbody>${data.map(p=>`<tr><td><strong>${p.nome}</strong></td><td>${p.vendedor}</td><td>${p.preco||'-'}</td><td>${p.aprovado?(p.ativo?'<span class="status status-aprovado">Ativo</span>':'<span class="status status-pendente">Inativo</span>'):'<span class="status status-pendente">Pendente</span>'}</td><td><button class="btn btn-ghost btn-sm" onclick="toggleProduto(${p.id},${p.ativo})" style="font-size:.7rem">${p.ativo?'Desativar':'Ativar'}</button> <button class="btn btn-danger btn-sm" onclick="excluirProduto(${p.id})" style="font-size:.7rem">🗑️</button></td></tr>`).join('')}</tbody></table></div>`;
+}
+async function toggleProduto(id,atual){await db.from('produtos').update({ativa:!atual}).eq('id',id);showToast('✅ Atualizado','success');carregarTodosProdutos();carregarDashboard();}
+async function excluirProduto(id){if(!confirm('Excluir?'))return;await db.from('produtos').delete().eq('id',id);showToast('🗑️ Excluído','success');carregarTodosProdutos();carregarDashboard();}
+
+async function carregarCandidaturas(){
+  const{data}=await db.from('candidaturas').select('*, vagas(titulo, empresa)').order('criado_em',{ascending:false});
+  const lista=document.getElementById('lista-candidaturas');
+  if(!data?.length){lista.innerHTML='<div class="empty"><h3>Nenhuma candidatura</h3></div>';return;}
+  lista.innerHTML=`<div class="table-wrap"><table><thead><tr><th>Candidato</th><th>Vaga</th><th>WhatsApp</th><th>Status</th></tr></thead><tbody>${data.map(c=>`<tr><td>${c.nome_candidato}</td><td>${c.vagas?.titulo||'Removida'}</td><td><a href="https://wa.me/55${c.whatsapp.replace(/\D/g,'')}" target="_blank" style="color:var(--cn-success)">📱 ${c.whatsapp}</a></td><td><span class="status status-${c.status==='aprovado'?'aprovado':c.status==='recusado'?'rejeitado':'pendente'}">${c.status}</span></td></tr>`).join('')}</tbody></table></div>`;
+}
+
+async function carregarUsuarios(){
+  const{data}=await db.from('perfis').select('*').order('criado_em',{ascending:false});
+  const lista=document.getElementById('lista-usuarios');
+  if(!data?.length){lista.innerHTML='<div class="empty"><h3>Nenhum usuário</h3></div>';return;}
+  lista.innerHTML=`<div class="table-wrap"><table><thead><tr><th>Nome</th><th>Tipo</th><th>Cidade</th><th>WhatsApp</th><th>Cadastro</th><th>Ações</th></tr></thead><tbody>${data.map(u=>`<tr><td>${u.nome}</td><td><span class="status status-ativo">${u.tipo_perfil||'-'}</span></td><td>${u.cidade||'-'}</td><td>${u.whatsapp||'-'}</td><td style="font-size:.75rem">${new Date(u.criado_em).toLocaleDateString('pt-BR')}</td><td><button class="btn btn-ghost btn-sm" onclick="excluirUsuario('${u.id}')" style="font-size:.7rem">🗑️</button></td></tr>`).join('')}</tbody></table></div>`;
+}
+async function excluirUsuario(id){if(!confirm('Excluir usuário? Esta ação não pode ser desfeita.'))return;await db.from('perfis').delete().eq('id',id);showToast('🗑️ Usuário excluído','success');carregarUsuarios();carregarDashboard();}
+
+checarAuth();
+</script>
+</body>
+</html>

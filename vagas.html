@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vagas — coNecta</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --cn-ink: #0A1628; --cn-primary: #1E5CFF; --cn-primary-d: #1748CC; --cn-primary-l: #EAF1FF; --cn-accent: #FF7A45; --cn-bone: #F7F5F0; --cn-paper: #FFFFFF; --cn-line: #E6E2D9; --cn-mute: #6B7280; --cn-success: #10B981; --cn-font-display: 'Sora', sans-serif; --cn-font-body: 'Inter', sans-serif; --cn-radius: 12px; --cn-shadow: 0 4px 16px rgba(10,22,40,.06); }
+        body { font-family: var(--cn-font-body); background: var(--cn-bone); color: var(--cn-ink); margin: 0; }
+        nav { position: sticky; top: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center; padding: 0 2rem; height: 64px; background: rgba(247,245,240,.96); border-bottom: 1px solid var(--cn-line); }
+        .logo-link { display: flex; align-items: center; gap: .5rem; text-decoration: none; } .logo-link svg { width: 34px; height: 34px; } .logo-txt { font-family: var(--cn-font-display); font-size: 1.2rem; font-weight: 700; color: var(--cn-ink); } .logo-txt span { color: var(--cn-primary); }
+        .nav-links { display: flex; gap: 1.75rem; list-style: none; } .nav-links a { font-size: .875rem; color: var(--cn-mute); text-decoration: none; } .nav-links a:hover, .nav-links a.active { color: var(--cn-ink); font-weight: 600; }
+        .btn-nav { background: var(--cn-primary); color: #fff; font-size: .85rem; font-weight: 600; padding: .55rem 1.25rem; border-radius: 8px; text-decoration: none; }
+        .filters { background: var(--cn-paper); padding: .85rem 2rem; border-bottom: 1px solid var(--cn-line); }
+        .filters-inner { max-width: 1160px; margin: 0 auto; display: flex; gap: .5rem; flex-wrap: wrap; }
+        .filter-btn { background: transparent; border: 1.5px solid var(--cn-line); color: var(--cn-mute); font-size: .8rem; padding: .38rem 1rem; border-radius: 20px; cursor: pointer; font-family: var(--cn-font-body); transition: all .2s; }
+        .filter-btn:hover, .filter-btn.active { background: var(--cn-primary); border-color: var(--cn-primary); color: #fff; }
+        .page-wrap { max-width: 1160px; margin: 0 auto; padding: 2rem; }
+        .vagas-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.25rem; }
+        .vaga-card { background: var(--cn-paper); border: 1.5px solid var(--cn-line); border-radius: var(--cn-radius); padding: 1.5rem; transition: all .22s; text-decoration: none; color: var(--cn-ink); display: block; }
+        .vaga-card:hover { box-shadow: var(--cn-shadow); transform: translateY(-2px); }
+        .vaga-empresa { font-size: .78rem; color: var(--cn-mute); margin-bottom: .4rem; }
+        .vaga-titulo { font-family: var(--cn-font-display); font-size: 1.08rem; font-weight: 700; margin-bottom: .4rem; }
+        .vaga-local { font-size: .82rem; color: var(--cn-mute); margin-bottom: 1rem; }
+        .vaga-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--cn-line); padding-top: 1rem; }
+        .vaga-salario { font-family: var(--cn-font-display); font-size: 1rem; font-weight: 700; }
+        @media (max-width: 900px) { .nav-links { display: none; } }
+    </style>
+</head>
+<body>
+<nav>
+    <a href="index.html" class="logo-link"><svg width="34" height="34" viewBox="0 0 110 110" fill="none"><path d="M22 92V28L88 84V28" stroke="#0A1628" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><circle cx="88" cy="28" r="9" fill="#FF7A45"/><circle cx="22" cy="92" r="9" fill="#1E5CFF"/></svg><span class="logo-txt">co<span>N</span>ecta</span></a>
+    <ul class="nav-links"><li><a href="marketplace.html">Marketplace</a></li><li><a href="vagas.html" class="active">Vagas</a></li><li><a href="capacitacao.html">Capacitação</a></li><li><a href="carteirinha.html">Carteirinha</a></li></ul>
+    <a href="login.html" class="btn-nav">Entrar ↗</a>
+</nav>
+<div class="filters"><div class="filters-inner">
+    <button class="filter-btn active" onclick="filtrar('')">🔖 Todas</button>
+    <button class="filter-btn" onclick="filtrar('Pinheiro')">📍 Pinheiro</button>
+    <button class="filter-btn" onclick="filtrar('Santa Inês')">📍 Santa Inês</button>
+    <button class="filter-btn" onclick="filtrar('Viana')">📍 Viana</button>
+</div></div>
+<div class="page-wrap"><div class="vagas-grid" id="vagasGrid"></div></div>
+
+<script>
+    const SUPABASE_URL = 'https://pzcycbmnnphywdzvymyr.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6Y3ljYm1ubnBoeXdkenZ5bXlyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNjczOTksImV4cCI6MjA5Mzk0MzM5OX0.f4jtslTFMnn0OhwiEhU7A_O6spowX6h4GEbHQ22hIEM';
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    let todas = [], filtro = '';
+
+    async function carregar() {
+        const { data } = await db.from('vagas').select('*').eq('aprovada', true).eq('ativa', true).order('criado_em', { ascending: false });
+        todas = data || [];
+        renderizar();
+    }
+    carregar();
+
+    function filtrar(c) {
+        filtro = c;
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        event.target.classList.add('active');
+        renderizar();
+    }
+
+    function renderizar() {
+        const grid = document.getElementById('vagasGrid');
+        const lista = filtro ? todas.filter(v => v.cidade === filtro) : todas;
+        if (!lista.length) {
+            grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--cn-mute)">Nenhuma vaga encontrada.</p>';
+            return;
+        }
+        grid.innerHTML = lista.map(v => `
+            <a href="#" class="vaga-card">
+                <div class="vaga-empresa">${v.empresa}</div>
+                <h3 class="vaga-titulo">${v.titulo}</h3>
+                <div class="vaga-local">📍 ${v.cidade} · ${v.area} · ${v.tipo_contrato}</div>
+                <div class="vaga-footer">
+                    <div class="vaga-salario">${v.salario || 'A combinar'}</div>
+                    <span style="color:var(--cn-primary);font-weight:600;font-size:.82rem">Candidatar-se →</span>
+                </div>
+            </a>
+        `).join('');
+    }
+</script>
+</body>
+</html>
