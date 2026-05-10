@@ -26,6 +26,10 @@
         .modal-overlay { position: fixed; inset: 0; background: rgba(10,22,40,.65); z-index: 500; display: none; align-items: center; justify-content: center; padding: 1.5rem; backdrop-filter: blur(4px); }
         .modal-overlay.show { display: flex; }
         .modal-box { background: var(--cn-paper); border-radius: 16px; max-width: 500px; width: 100%; padding: 2rem; box-shadow: 0 20px 60px rgba(10,22,40,.3); text-align: center; }
+        .modal-box h3 { font-family: var(--cn-font-display); margin-bottom: 1rem; }
+        .modal-box p { margin-bottom: .8rem; }
+        .pix-chave { background: #f1f5f9; padding: .6rem; border-radius: 8px; font-weight: 600; user-select: all; }
+        .modal-actions { display: flex; gap: .5rem; margin-top: 1.5rem; justify-content: center; }
         @media (max-width: 900px) { .nav-links { display: none; } }
     </style>
 </head>
@@ -38,13 +42,18 @@
 <div class="hero"><h1>Capacitação Profissional</h1><p>Cursos para você se destacar no mercado</p></div>
 <div class="page-wrap"><div class="cursos-grid" id="cursosGrid"></div></div>
 
+<!-- Modal PIX -->
 <div class="modal-overlay" id="modalPix" onclick="fecharModalPix(event)">
     <div class="modal-box" onclick="event.stopPropagation()">
-        <h3>Pagamento via PIX</h3>
+        <h3 id="modalTitulo">Pagamento via PIX</h3>
         <p>Valor: <strong id="pixValor"></strong></p>
-        <p>Chave: <strong>guilermo_monteiro@gmail.com</strong></p>
-        <button class="btn-matricula" id="btnNotificar">Já paguei – Notificar via WhatsApp</button>
-        <button class="btn-matricula" style="background: var(--cn-mute); margin-top: .5rem;" onclick="fecharModalPix()">Cancelar</button>
+        <p>Chave PIX:</p>
+        <div class="pix-chave">guilermo_monteiro@gmail.com</div>
+        <p style="font-size:.8rem; color:var(--cn-mute);">Após o pagamento, clique em "Já paguei" para notificar o administrador.</p>
+        <div class="modal-actions">
+            <button class="btn-matricula" id="btnNotificar">Já paguei – Notificar via WhatsApp</button>
+            <button class="btn-matricula" style="background: var(--cn-mute);" onclick="fecharModalPix()">Cancelar</button>
+        </div>
     </div>
 </div>
 
@@ -53,8 +62,21 @@
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6Y3ljYm1ubnBoeXdkenZ5bXlyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNjczOTksImV4cCI6MjA5Mzk0MzM5OX0.f4jtslTFMnn0OhwiEhU7A_O6spowX6h4GEbHQ22hIEM';
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     let cursosData = [];
+    let usuarioLogado = null; // guardará id e nome do comprador
+
+    // ═══ VERIFICA SESSÃO E OBTÉM DADOS DO COMPRADOR ═══
+    async function obterUsuario() {
+        const { data: { session } } = await db.auth.getSession();
+        if (session) {
+            const { data: perfil } = await db.from('perfis').select('id, nome').eq('id', session.user.id).single();
+            if (perfil) {
+                usuarioLogado = { id: perfil.id, nome: perfil.nome };
+            }
+        }
+    }
 
     async function carregar() {
+        await obterUsuario();
         const { data } = await db.from('cursos').select('*').eq('ativo', true).order('criado_em', { ascending: false });
         cursosData = data || [];
         renderizar();
@@ -76,31 +98,53 @@
                     <div class="curso-nome">${c.nome}</div>
                     <div class="curso-footer">
                         <div class="curso-preco">${c.gratis ? 'Grátis' : 'R$ ' + (c.preco || 0).toFixed(2)}</div>
-                        <button class="btn-matricula" onclick="matricular(${c.id})">${c.gratis ? 'Acessar' : 'Matricular-se'}</button>
+                        <button class="btn-matricula" onclick="matricular(${c.id})">${c.gratis ? 'Acessar agora' : 'Matricular-se'}</button>
                     </div>
                 </div>
             </div>`;
         }).join('');
     }
 
+    // ═══ AÇÃO DE MATRÍCULA ═══
     function matricular(cursoId) {
         const curso = cursosData.find(c => c.id === cursoId);
         if (!curso) return;
+
         if (curso.gratis) {
-            alert('Curso gratuito liberado!');
+            // Para cursos gratuitos, redireciona para o painel (futuramente pode ser uma página do curso)
+            alert('Curso gratuito liberado! Acesse seu painel para começar.');
+            window.location.href = 'painel.html';
             return;
         }
+
+        // Curso pago → exibe modal PIX
+        if (!usuarioLogado) {
+            alert('Faça login para se inscrever em cursos pagos.');
+            window.location.href = 'login.html';
+            return;
+        }
+
         document.getElementById('pixValor').textContent = `R$ ${curso.preco.toFixed(2)}`;
+        document.getElementById('modalTitulo').textContent = `Curso: ${curso.nome}`;
+
         document.getElementById('btnNotificar').onclick = () => {
-            const mensagem = `Olá, realizei o pagamento do curso "${curso.nome}" no valor de R$ ${curso.preco.toFixed(2)}.`;
-            window.open(`https://wa.me/351962890061?text=${encodeURIComponent(mensagem)}`, '_blank');
+            const mensagem = `Comprei o curso "${curso.nome}" (ID: ${curso.id}) por R$ ${curso.preco.toFixed(2)}.\nMeu ID de comprador: ${usuarioLogado.id}\nNome: ${usuarioLogado.nome}`;
+            const url = `https://wa.me/351962890061?text=${encodeURIComponent(mensagem)}`;
+            window.open(url, '_blank');
             fecharModalPix();
         };
+
         document.getElementById('modalPix').classList.add('show');
     }
 
-    function fecharModalPix(e) { document.getElementById('modalPix').classList.remove('show'); }
-    document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharModalPix(); });
+    // ═══ MODAL PIX ═══
+    function fecharModalPix(e) {
+        if (e && e.target !== document.getElementById('modalPix')) return;
+        document.getElementById('modalPix').classList.remove('show');
+    }
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') fecharModalPix();
+    });
 </script>
 </body>
 </html>
